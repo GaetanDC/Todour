@@ -4,8 +4,11 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network widgets printsupport
-QT +=xml statemachine
+QT += network
+# QT += statemachine
+
+QT       += core gui widgets printsupport
+QT +=xml
 
 TARGET = Todour
 TEMPLATE = app
@@ -15,7 +18,7 @@ DEFINES += VER=\"\\\"$${VERS}\\\"\"
 CONFIG += c++11
 CONFIG+=sdk_no_version_check
 CONFIG+=qt console
-#CONFIG+=debug
+CONFIG+=debug
 CONFIG+=fontAwesomeFree
 
 macx{
@@ -42,13 +45,8 @@ SOURCES += main.cpp\
     taskset.cpp\
     version.cpp \
     todo_undo.cpp \
-    caldav.cpp \
-	Caldav/CalendarClient_CalDAV.cpp \
-	Caldav/CalendarEvent.cpp \
-	Caldav/DateUtils.cpp \
-	Caldav/CalendarClient_CalDAV_StateMachine.cpp    \
-	Caldav/SimpleCrypt.cpp \
-	Caldav/caldav_util.cpp
+    todo_proxymodel.cpp \
+    notetxt.cpp
     
 
 HEADERS  += mainwindow.h \
@@ -63,12 +61,9 @@ HEADERS  += mainwindow.h \
     version.h \
     todo_undo.h \
     todo_backend.h \
-    caldav.h \
-    Caldav/DateUtils.h \
-    Caldav/SimpleCrypt.h \
-    Caldav/CalendarEvent.h \
-    Caldav/CalendarClient_CalDAV.h \
-    Caldav/caldav_util.h
+    todo_proxymodel.h \
+    notetxt.h
+
 
 FORMS    += mainwindow.ui \
     settingsdialog.ui \

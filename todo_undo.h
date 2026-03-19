@@ -3,12 +3,13 @@
 
 #include <QUndoCommand>
 #include "task.h"
-#include "todotablemodel.h"
+//#include "todotablemodel.h"
 #include "taskset.h"
 
 using namespace std;
 
-//TODO: consider a masterclass doing all the common stuff??
+//TODO: consider a masterclass doing all the common stuff + being friend of taskset?
+class taskset;
 
 class AddCommand : public QUndoCommand
 {
@@ -22,9 +23,8 @@ public:
 	bool mergeWith(const QUndoCommand *other);
 	
 protected:
-    task* _task;
-    TodoTableModel* _model;
-	taskset* tasklist;
+   task* _task;
+	taskset* tasklist; //ref to tasklist to add / remove
 };
 
 
@@ -40,8 +40,7 @@ public:
 	
 protected:
 	task* _task;
-	TodoTableModel* _model;
-	taskset* tasklist;
+	taskset* tasklist; //ref to tasklist to add / remove
  	QUuid _tuid;
 
 
@@ -51,7 +50,7 @@ protected:
 class EditCommand : public QUndoCommand
 {
 public:
-    explicit EditCommand(taskset* _list, task* t, QString new_raw, QUndoCommand *parent = nullptr);
+    explicit EditCommand(taskset* _list, task* t, QString _new_raw, QUndoCommand *parent = nullptr);
 	~EditCommand();
     void undo() override;
     void redo() override;
@@ -59,11 +58,11 @@ public:
 	bool mergeWith(const QUndoCommand *other);
 	
 protected:
-	task* _task;
-	QString _old_raw;
-	QString _new_raw;
-	TodoTableModel* _model;
 	taskset* tasklist;
+	task* _task;
+	QString old_raw;
+	QString new_raw;
+	 //ref to tasklist to add / remove
     };
 
 
@@ -82,8 +81,7 @@ protected:
 	task* _task;
 	task* rec_task;
 	bool _complete;
-	TodoTableModel* _model;
-	taskset* tasklist;
+	taskset* tasklist; //ref to tasklist to add / remove
 
 };
 
@@ -101,8 +99,7 @@ protected:
 	task* _task;
 	QChar _priority;
 	QChar _p_priority;
-	TodoTableModel* _model;
-	taskset* tasklist;
+	taskset* tasklist; //ref to tasklist to add / remove
 
 };
 
@@ -115,7 +112,5 @@ public:
 private:
 
 };
-
-
 
 #endif // TODOUNDO_H

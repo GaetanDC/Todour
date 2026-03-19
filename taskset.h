@@ -4,14 +4,10 @@
 
 #include "todo_backend.h"
 #include "task.h"
-#include <QUndoStack>
+#include <QUndoCommand>
 #include <vector>
 
 class todo_backend;
-
-#define TODOUR_INACTIVE "TODOUR_INACTIVE_794e26fdf5ea"
-// this should be removed if the model / proxy is good.
-
 
 class taskset:public QObject
 {
@@ -21,57 +17,82 @@ private:
 
 protected:
 	todo_backend  *todo;
-	todo_backend *cdav_client;
    std::vector<task*> content;  //RENAME THIS
 
 public:
-    explicit taskset(QUndoStack* undo, QObject *parent = 0);
-    ~taskset();
+   explicit taskset(QUndoStack* undo, QObject *parent = 0);
+   ~taskset();
 
-    void addTask(task* t);
-    task* removeTask(QUuid tuid);
-    
-    void safeComplete(int position, bool state);
-    void safeEdit(int position, QString _raw);
-    void safeAdd(task* _t);
-    void safeDelete(QUuid index);
-    void safePostpone(int position, QString txt);
-    void safePriority(int position, QChar prio);
-    
-	 task* getTask(QUuid tuid);
-	 task* getTask(int position);
-	 inline task* at(int position) const {return content.at(position);};
-	// inline void push_back(task* _t) {content.push_back(_t);};
-	 inline bool empty() const {return content.empty();};
-	 inline int size() const {return content.size();};
+   void addTask(task* t); // this could maybe be set as protected + friend of undo.
+   task* removeTask(QUuid tuid); // this could maybe be set as protected + friend of undo.
+   
+   void safeComplete(int position, bool state);
+	void safeToggleComplete(int position);
+	void safeEdit(int position, QString _raw);
+   void safeAdd(task* _t);
+   void safeDelete(QUuid index);
+   void safePostpone(int position, QString txt);
+   void safePriority(int position, QChar prio);
 
+	task* getTask(QUuid tuid);   //Only used in TodoTableModel
+	task* getTask(int position);  // Not implemented. Only used in todoTableModel
+	inline task* at(int position) const {return content.at(position);};
+	inline bool empty() const {return content.empty();};  //only in todotableModel
+	inline int size() const {return content.size();};
+	inline QStringList getContexts(){return contexts;};
     
-    void refreshActive(); //cycle through all task to recalculate the active state
-	int flush();
-//NOte: todotablemodel uses  "->size, ->empty, ->at, ->toggleDone
-//
-
-    
+   void refreshActive(); //cycle through all task to recalculate the active state  #TODO to be removed ??
+	void flush();
    void setFileWatch(bool b, QObject *parent);
 	QString toString();
-	int size();
+	int size();  //only in todotableModel
 	void archive();
-    void synchronize();
-q
+	void reloadContexts();
+	int taskCriticity(task* t);
+
 signals:
 	void dataSavedOK();
-	void backendError();
-	void sync_error();
-	void sync_finished();
+	void backendError(QString);
 	
 public slots:
     void backendDataLoaded();
-    void backendDataSaved();
     void toggleDone(int tuid);
-	void actualSynchronize();
-    
 private:
 	QUndoStack* _undo;
+	QStringList contexts;
 };
+
+#include "notetxt.h"
+
+class noteset : public QObject
+{
+
+Q_OBJECT
+
+public:
+	noteset(QUndoStack* undo, QObject* parent);
+	~noteset();
+
+	void handleTextChanged(QString newtext); // text changed in UI, write it on disk. Only launched by save or equiv.
+
+   void setFileWatch(bool b, QObject *parent); //cannot be used.
+	void flush();
+	QString toString();
+	void reLoad();	
+
+	
+public slots:
+   void backendDataLoaded();						// text-file rady to load
+
+signals:
+	void backendError(QString txt);
+	void dataSavedOK();
+	void updateText(QString txt);
+
+private:
+	notetxt* notes;
+	QString content;
+};
+
 
 #endif //define TASKSET_H

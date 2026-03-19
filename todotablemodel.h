@@ -10,8 +10,7 @@
 
 #define TODOUR_INACTIVE "TODOUR_INACTIVE_794e26fdf5ea"
 
-class TodoTableModel : public QAbstractTableModel
-{
+class TodoTableModel : public QAbstractTableModel{
     Q_OBJECT
 protected:
 	taskset* tasklist;
@@ -31,36 +30,25 @@ public:
 //    void refreshActive(); //cycle through all task to recalculate the active state
 	QString toString();
 
-signals:
-	
-public slots:
-private:
 
-};
+/* FUNCTIONS TO CONSIDER DROPPING HERE
+	 void safeComplete(int position, bool state);
+	 void safeEdit(int position, QString _raw);
+    void safeAdd(task* _t);
+    void safeDelete(QUuid index);
+    void safePostpone(int position, QString txt);
+    void safePriority(int position, QChar prio);
+	 void flush();
+	 void archive();
+    void setFileWatch(bool b, QObject *parent);
+	 */
 
-
-class IdeaTableModel : public TodoTableModel
-{
-    Q_OBJECT
-protected:
-public:
-    explicit IdeaTableModel(taskset* _tasklist, QObject *parent = 0);
-    ~IdeaTableModel();
-    int columnCount(const QModelIndex &parent) const;
-
-    QVariant data(const QModelIndex &index, int role) const;
-    QVariant headerData(int section, Qt::Orientation orientation, int role) const;
-    Qt::ItemFlags flags(const QModelIndex& index) const;
- 	 bool setData(const QModelIndex & index, const QVariant & value, int role);
-
-//    void refresh();    
 
 signals:
-	
-public slots:
+	public slots:
 private:
+	eTaskCriticity taskCriticity(task* t) const;
 
 };
-
 
 #endif // TODOTABLEMODEL_H

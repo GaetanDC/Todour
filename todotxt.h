@@ -13,6 +13,8 @@
 #include <vector>
 #include <QString>
 #include <QFile>
+#include <QFileSystemWatcher>
+
 
 #include "task.h"
 #include "todo_backend.h"
@@ -21,6 +23,7 @@ using namespace std;
 
 class todotxt : public todo_backend
 {
+Q_OBJECT
 public:
     explicit todotxt(QObject *parent = 0);
     ~todotxt();
@@ -30,7 +33,7 @@ public:
 	void reloadRequest();
 	void writeRequest(vector<task*>& content, TodoDestination t, bool append);
 	bool isReady();
-	QString getType();
+	inline QString getType(){return "todotxt";};
 	
 protected:    
     QString _TodoFilePath;
@@ -48,7 +51,8 @@ protected:
  
 private:
     void slurp(QFile* filename,vector<QString>&  content);
-    
+    QFileSystemWatcher *watcher;
+
     
 public slots:
 //	void fileModified(QString str);

@@ -7,15 +7,17 @@
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QTimer> //used for hiding version bar
-#include <QSortFilterProxyModel>
 #include <QDesktopServices> //used for showing the online user manual.
 #include <QUndoStack>
 #include <QClipboard>
 #include <QCompleter>
 
 #include <memory>
+
 #include "version.h"
 #include "taskset.h"
+#include "todo_proxymodel.h"
+#include "notetxt.h"
 
 namespace Ui {
 class MainWindow;
@@ -32,6 +34,7 @@ public:
     
 public slots:
     void updateTitle();
+    void handleNoteUpdate(QString txt);
     
 private slots:
     void updateSettings();
@@ -53,7 +56,6 @@ private slots:
     void on_addButton_clicked();
     void on_archiveButton_clicked();
     void on_refreshButton_clicked();
-    void on_syncButton_clicked();
     void on_pb_closeVersionBar_clicked();
 
 
@@ -63,16 +65,13 @@ private slots:
     void on_hotkey();
     void on_context_lock_toggled(bool checked);
 
-
-    void on_cb_threshold_inactive_stateChanged(int arg1);
     void iconActivated(QSystemTrayIcon::ActivationReason reason);
     void cleanup(); // Need to have a quit slot of my own to save settings and so on.
 
     		
     void on_tableView_customContextMenuRequested(const QPoint &pos);
-    void on_ideaView_customContextMenuRequested(const QPoint &pos);
+    void on_noteView_customContextMenuRequested(const QPoint &pos);
     		
-    void on_actionShow_All_changed();
     void on_actionStay_On_Top_changed();
     		
 	 void dataInModelChanged(QModelIndex,QModelIndex);
@@ -83,7 +82,6 @@ private slots:
    void on_actionPostpone();
    void on_actionDuplicate();
    void on_actionPriority(QChar p);
-	void on_actionIdeaDelete();
 	
    inline void on_actionPriorityA(){on_actionPriority('A');}
    inline void on_actionPriorityB(){on_actionPriority('B');}
@@ -94,25 +92,26 @@ private slots:
    void on_actionSortAZ();
    void on_actionSortDate();
    void on_actionSortInactive();
+   void on_actionTodaysView();
+   void on_actionRespectThreshold();
+   void on_actionThresholdDue();
+   void on_actionShowInactive();
+   
+   
    void on_actionCopy();
    void on_actionSpace();
    void on_actionUndo();
    void on_actionRedo();
-      
+    
    void new_version(QString);
 
 private:
-    QSortFilterProxyModel *proxyModel;
-    QSortFilterProxyModel *ideaProxyModel;
+    todoProxyModel *proxyModel;
 
     void setTray();
-//    void clearFileWatch();
     void closeEvent(QCloseEvent *ev);
     Ui::MainWindow *ui;
-    void saveTableSelection();
-    void resetTableSelection();
     void updateSearchResults();
-	 void updateSort();
 
     void stayOnTop();
 
@@ -133,6 +132,7 @@ private:
 	todour_version *Version;
 	
 	taskset* task_set;
+	noteset* note_set;
 	QUndoStack* _undoStack;
            
     QCompleter* _taglist;

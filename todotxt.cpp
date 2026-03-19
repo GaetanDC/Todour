@@ -7,8 +7,6 @@
 #include <QSettings>
 #include <QDebug>
 
-#include <QFileSystemWatcher>
-
 todotxt::todotxt(QObject *parent) :
 	todo_backend(parent)
 {
@@ -45,7 +43,7 @@ void todotxt::reloadRequest()
     _TodoFile->open(QIODevice::ReadOnly | QIODevice::Text);
 
     if (!_TodoFile->isOpen()){
-    	qDebug()<<"todotxt::getAllTask error opening file"<<endline;
+    	qDebug()<<"todotxt::reloadRequest error opening file"<<endline;
     	return;
     }
 	emit DataAvailable();
@@ -147,7 +145,6 @@ return 0 : sucess.
     return;
 }
 
-QFileSystemWatcher *watcher;
 void todotxt::setMonitoring(bool b, QObject *parent)
 /* */
 {
@@ -165,12 +162,6 @@ void todotxt::setMonitoring(bool b, QObject *parent)
         watcher = NULL;
 	}
 }
-}
-
-QString todotxt::getType()
-/* return type of Backend*/
-{
-	return "todotxt";
 }
 
 // #TODO  delete this?

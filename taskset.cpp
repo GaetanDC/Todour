@@ -1,81 +1,74 @@
 #include "taskset.h"
 #include "def.h"
+
 #include "todo_undo.h"
 
-
 #include "todotxt.h"
-#include "caldav.h"
+//#include "caldav.h"
+
+#include <QMessageBox>
+#include <QRegularExpression>
 
 taskset::taskset(QUndoStack* undo, QObject *parent):
 	_undo(undo)
-/* */{
-    Q_UNUSED(parent);
-     	QSettings settings;
+/* 
+*/{
+	Q_UNUSED(parent);
+   QSettings settings;
 
-    todo = new todotxt();
-
-    // 	if (settings.value(SETTINGS_BACKEND).toString()=="caldav"){
-// 		todo = new caldav();
-// 		}
-
+   todo = new todotxt();
 	QObject::connect(todo,SIGNAL(DataChanged()),this,SLOT(backendDataLoaded()));//REM
-	QObject::connect(todo,SIGNAL(ConnectionLost()),this,SIGNAL(backendError()));//REM
 	QObject::connect(todo,SIGNAL(DataAvailable()),this,SLOT(backendDataLoaded()));//REM
-	QObject::connect(todo,SIGNAL(DataSaved()),this,SLOT(backendDataSaved()));//REM
-	if (todo->isReady())//REM
-		todo->reloadRequest();//REM
+	QObject::connect(todo,SIGNAL(DataSaved()),this,SIGNAL(dataSavedOK()));//REM
+	if (todo->isReady())
+		todo->reloadRequest();
 
-
-qDebug()<<"SCOPE09: taskset created and connect done"<<endline;
-    }
+	reloadContexts();
+}
     
 taskset::~taskset()
 /* */{
-        delete todo;//REM
+	delete todo;//REM
 }
-    
+
 ////%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //Safe commands generate the action through the _undo stack
 
-
 void taskset::safeComplete(int position, bool state)
-/* Safely complete the tasks at position, creating an undo command
-*/{
+/* Safely complete the tasks at position, creating an undo command*/{
 	_undo->push(new CompleteCommand(this, content.at(position), state));
-
-}
-   
+	}
+	
 void taskset::safeEdit(int position, QString _raw)
-/* Safely edit the task at position, creating an undo command
-*/{
+/* Safely edit the task at position, creating an undo command*/{
 	_undo->push(new EditCommand(this, content.at(position),_raw));
-}
-
-void taskset::safeAdd(task* t)
-/* Safely add a task, creating an undo command
-*/{
-    QSettings settings;
-    QString prio="";
-  	 _undo->push(new AddCommand(this,t));
-}
-
+	}
+	
+void taskset::safeAdd(task* _t)
+/* Safely add a task, creating an undo command*/{
+	_undo->push(new AddCommand(this,_t));
+  	}
+      	 
 void taskset::safeDelete(QUuid index)
-/* Safely delete a task, creating an undo command
-*/{
+/* Safely delete a task, creating an undo command*/{
 	_undo->push(new DeleteCommand(this,index));
-}
-
+	}
+	
 void taskset::safePostpone(int position, QString txt)
-/* Safely postpone a task, creating an undo command
-*/{
+/* Safely postpone a task, creating an undo command*/{
 	_undo->push(new PostponeCommand(this, content.at(position), txt));
-}
+	}
 
 void taskset::safePriority(int position, QChar prio)
-/* Safely change priority of a task, creating an undo command
-*/ {
+/* Safely change priority of a task, creating an undo command*/{ 
 	_undo->push(new PriorityCommand(this,content.at(position), prio));
-}
+	}
+	
+void taskset::safeToggleComplete(int position)
+/* Safely toggle the complete state*/
+{
+	_undo->push(new CompleteCommand(this, content.at(position), !content.at(position)->isComplete()));
+	}
 
 
 ////%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -121,16 +114,16 @@ task* taskset::getTask(int position)
     return nullptr;
 }
 
-int taskset::flush()
-/*  
+void taskset::flush()
+/*  backend will emit signals, connect done above.
 */{
    todo->writeRequest(content,typeTodo,false); // append=false
-	return 0;    //#TODO change this: we receive a signal when write is ok.
 }
     
 void taskset::refreshActive()
 /* 
 */{
+qDebug()<<"DEPRECATED taskset::refreshActive()"<<endline;
     for (unsigned int i=0;i<content.size();i++){
     	content.at(i)->refreshActive(QDateTime::currentDateTime());
     	}
@@ -139,7 +132,7 @@ void taskset::refreshActive()
 int taskset::size()
 /* 
 */{
-    return (int)content.size();;
+    return (int)content.size();
 }
     
 //cycle through all task to recalculate the active state
@@ -160,13 +153,6 @@ void taskset::backendDataLoaded()
   	todo->getAllTask(content);  
   		qDebug()<<"void taskset::backendDataLoaded() - all tasks loaded"<<endline;
 }
-    
-void taskset::backendDataSaved()
-/* 
-*/{
-	emit dataSavedOK();
-}
-    
 
 void taskset::toggleDone(int position)
 /* 
@@ -195,8 +181,7 @@ void taskset::archive()
             iter++;
         }
      }
-
-    todo->writeRequest(content,typeTodo,false); // append=false
+	this->flush();
     todo->writeRequest(done_set,typeDone,true); // append=true
 //    QAbstractItemModel::endResetModel();
 }
@@ -207,61 +192,95 @@ void taskset::setFileWatch(bool b, QObject *parent)
    todo->setMonitoring(b, parent);
 }
 
-//SIGNAL	void sync_error();
-//SIGNAL void sync_finished();
-	    
-void taskset::synchronize()
-/* start a sync.   
+
+
+void taskset::reloadContexts()
+/*
 */{
-	//1. get data from caldav
-	cdav_client = new caldav();
-	QObject::connect(cdav_client,SIGNAL(DataAvailable()),this,SLOT(actualSynchronize()));//REM
-	cdav_client->reloadRequest();
-	qDebug()<<"taskset::synchronize() started"<<endline;
+// for each tasks in content, find the context (#... or @...)
+// compare found value with the actual list.
+// if not in the list, add it
+//	else skip
+
+	for (vector<task*>::iterator itask=content.begin();itask!=content.end();++itask){
+		for(QString s:(*itask)->getContexts()){
+			if (! contexts.contains(s))
+					contexts<<s;
+			}
+	}
+	
+	qDebug()<<"taskset::reloadContexts: "<<contexts<<endline;
 }
 
-void taskset::actualSynchronize()
-/*  do the sync    3. emit sync_error() or sync_finished()
-*/{
-		std::vector<task*> cdav;
-		cdav_client->getAllTask(content);  
-  		qDebug()<<"void taskset::actualSynchronize all tasks loaded from cdav"<<endline;
-	//2.check every items
-	bool found;
-	for (unsigned int i=0;i<content.size();i++){  //Pour chaque item de L1
-		found=false;// Found=false
-		for (unsigned int j=0;i<cdav.size();i++){//  Pour chaque item de L2
-			if(*content[i]==*cdav[j]){// Si L1.id = L2.id
-				found=true;  //Found=true
-				if (content[i]->getTimeStamp() == cdav[j]->getTimeStamp())//Si L1.date == L2.date    break
-					break;
-				if (content[i]->getTimeStamp() < cdav[j]->getTimeStamp()){   //Si L1.date < L2.date    copy from L1 to L2; break
-					qDebug()<<"taskset::synchronize() copy from todotxt to cdav"<<endline;
-					break;
-					}
-				if (content[i]->getTimeStamp() > cdav[j]->getTimeStamp()){ //So L1.date > L2.date   copy from L2 to L1;break
-					qDebug()<<"taskset::synchronize() copy from cdav to todotxt"<<endline;
-					break;
-					}
-				}
-			}
-		if (!found){ // If (! Found)     copy from L1 to L2 ;
-			qDebug()<<"taskset::synchronize() not found, copy from todotxt to cdav"<<endline;
-		}
-	}
-   for (unsigned int i=0;i<cdav.size();i++){  //Pour chaque item de L2
-		found=false;// Found=false
-		for (unsigned int j=0;i<content.size();i++){//  Pour chaque item de L1
-			if(*cdav[i]==*content[j]){// Si L1.id = L2.id
-				found=true;  //Found=true
-				break;
-				}
-			}
-		}
-	if (!found){ // If (! Found)     copy from L1 to L2 ;
-		qDebug()<<"taskset::synchronize() not found, copy from cdav to todotxt"<<endline;
-	}
 
-emit sync_finished();
+
+
+//*************************************************************************************************************************
+
+noteset::noteset(QUndoStack* undo, QObject* parent)
+/*
+*/{
+	Q_UNUSED(parent)
+	Q_UNUSED(undo)
+	notes=new notetxt(this);
+	content="";	
+	connect(notes,SIGNAL(WriteError(QString)),this, SIGNAL(backendError(QString)));
+	connect(notes,SIGNAL(ReadError(QString)),this, SIGNAL(backendError(QString)));
+	connect(notes,SIGNAL(DataSaved()),this, SIGNAL(dataSavedOK()));
+	connect(notes,SIGNAL(DataAvailable()),this, SLOT(backendDataLoaded()));
+	connect(notes,SIGNAL(DataChanged()),this, SLOT(backendDataLoaded()));
+//	qDebug()<<"noteset::noteset created"<<endline;
 }
+
+void noteset::reLoad()
+/*
+*/{
+	notes->reloadRequest();
+}
+
+
+noteset::~noteset()
+/*
+*/{
+	delete notes;
+}
+
+void noteset::setFileWatch(bool b, QObject *parent)
+/*
+*/{
+	Q_UNUSED(parent)
+	Q_UNUSED(b)
+	notes->setMonitoring(false,this); //disable filewatcher because we keep our version in memory and not on file...
+}
+
+QString noteset::toString()
+/*
+*/{
+	return notes->toString();
+}
+
+void noteset::handleTextChanged(QString newtext)
+/* receive text from UI, save it.
+*/{
+
+	notes->writeRequest(newtext);
+}
+
+void noteset::backendDataLoaded()
+/*
+*/{
+//	qDebug()<<"noteset::backendDataLoaded start"<<endline;
+
+	notes->getAllText(&content);
+	emit updateText(content);
+
+}
+
+
+void noteset::flush()
+/*
+*/{
+// Nothing to do.
+}
+
 

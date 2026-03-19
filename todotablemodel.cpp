@@ -2,7 +2,6 @@
 #include "def.h"
 
 #include <QFont>
-#include <QSettings>
 #include <QRegularExpression>
 #include <QDebug>
 #include <vector>
@@ -13,14 +12,7 @@ TodoTableModel::TodoTableModel(taskset* _tasklist, QObject *parent) :
     QAbstractTableModel(parent), tasklist(_tasklist)
 {}
 
-IdeaTableModel::IdeaTableModel(taskset* _tasklist, QObject *parent) :
-   TodoTableModel(_tasklist, parent)
-{}
-
-
 TodoTableModel::~TodoTableModel(){}
-
-IdeaTableModel::~IdeaTableModel(){}
 
 int TodoTableModel::rowCount(const QModelIndex &parent) const {
     Q_UNUSED(parent);
@@ -32,11 +24,6 @@ int TodoTableModel::rowCount(const QModelIndex &parent) const {
 int TodoTableModel::columnCount(const QModelIndex &parent) const {
     Q_UNUSED(parent);
     return 2;
- }
-
-int IdeaTableModel::columnCount(const QModelIndex &parent) const {
-    Q_UNUSED(parent);
-    return 1;
  }
 
 
@@ -52,15 +39,6 @@ QVariant TodoTableModel::headerData(int section, Qt::Orientation orientation, in
   return QVariant::Invalid;
 }
 
-QVariant IdeaTableModel::headerData(int section, Qt::Orientation orientation, int role) const
-/*
-*/{
-    Q_UNUSED(orientation);
-    Q_UNUSED(section);
-    if(role == Qt::DisplayRole)
-       return "Idea";
-  return QVariant::Invalid;
-}
 
 Qt::ItemFlags TodoTableModel::flags(const QModelIndex& index) const
 /*
@@ -75,14 +53,6 @@ Qt::ItemFlags TodoTableModel::flags(const QModelIndex& index) const
   return returnFlags;
 }
 
-Qt::ItemFlags IdeaTableModel::flags(const QModelIndex& index) const
-/*
-*/{
-  Qt::ItemFlags returnFlags = QAbstractTableModel::flags(index);
-     returnFlags |= Qt::ItemIsEditable | Qt::ItemNeverHasChildren;
-  return returnFlags;
-}
-
 
 QVariant TodoTableModel::data(const QModelIndex &index, int role) const
 /* returns data requested by the modelView
@@ -93,31 +63,30 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
     if (index.row() >= (int) tasklist->size() || index.row() < 0) return QVariant();
     if (role == Qt::DisplayRole || role==Qt::ToolTipRole){
         if(index.column()==1){
-            QString s=tasklist->at(index.row())->getDisplayText();//CHANGE
-            return s;
+            return QString(tasklist->at(index.row())->getDisplayText());
         }
      }
 
     if (role == Qt::EditRole) {
-        if(index.column()==1){ //CHANGE 
-            QString s=tasklist->at(index.row())->getEditText();   //ATTENTION : il faut ici afficher plus (color,...) mais pas tout!
+        if(index.column()==1){
+            QString s=tasklist->at(index.row())->getEditText();
             return s;
         }
      }
 
     if(role == Qt::CheckStateRole) {
-        if(index.column()==0) return tasklist->at(index.row())->isComplete();  //CHANGE
+        if(index.column()==0) return tasklist->at(index.row())->isComplete();
     }
 
     if(role == Qt::FontRole) {
         if(index.column()==1){
             QFont f;
-            if (! tasklist->at(index.row())->isActive()){ //CHANGE
+            if (! tasklist->at(index.row())->isActive()){
             	 f.fromString(settings.value(SETTINGS_INACTIVE_FONT).toString());
             } else {
                  f.fromString(settings.value(SETTINGS_ACTIVE_FONT).toString());
             }
-			 f.setStrikeOut(tasklist->at(index.row())->isComplete()); // Strike out if done  //CHANGE
+			 f.setStrikeOut(tasklist->at(index.row())->isComplete());
 
             return f;
         }
@@ -153,12 +122,12 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
         		}
     		}
 
-    if (role == Qt::BackgroundRole && index.column()==1){
+    if (role == Qt::BackgroundRole && index.column()==1){ // proxy: soit rien ne change, soit on désactive les couleurs de fond en idea?
 		if (tasklist->at(index.row())->getColor()->isValid()) //CHANGE
 			return QVariant::fromValue(tasklist->at(index.row())->getColor()->lighter(180));  //CHANGE
 	}
 
-		//Qt::UserRole is used for sorting. To use the power of regexp and QProxyModel, we will add a special code TODOUR_INACTIVE
+		//Qt::UserRole is used for sorting. To use the power of regexp and QProxyModel, we will add a special code TODOUR_INACTIVE to be removed with the new proxy  TO BE REMOVED !!!
     if(role == Qt::UserRole){
 		QString _prepend="";
 		if (settings.value(SETTINGS_SEPARATE_INACTIVES,DEFAULT_SEPARATE_INACTIVES).toBool())
@@ -172,49 +141,15 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
 	    }
 	 }
 
-	if(role == Qt::UserRole+1){  //UserRole+1 is used to sort by inputdate.
-		return tasklist->at(index.row())->getInputDate()->toString("yyyy-MM-dd"); //CHANGE
+	if(role == Qt::UserRole+1){  //UserRole+1 returns inputdate
+	qDebug()<<"todotablemodel.cpp: inputdate="<<tasklist->at(index.row())->getInputDate()->toString("yyyy-MM-dd")<<endline;
+		return QVariant(*(tasklist->at(index.row())->getInputDate()));
 	}
 
-	return QVariant();
-}
-
-QVariant IdeaTableModel::data(const QModelIndex &index, int role) const
-/* returns data requested by the modelView
-*/{
-	QSettings settings;
-	if (!index.isValid()) return QVariant();
-	if (tasklist->empty()) return QVariant();
-    if (index.row() >= (int) tasklist->size() || index.row() < 0) return QVariant();
-    if (role == Qt::DisplayRole || role==Qt::ToolTipRole)
-    {
-        QString s=tasklist->at(index.row())->getDisplayText();//CHANGE
-        return s;
-        }
-
-    if (role == Qt::EditRole) {
-        QString s=tasklist->at(index.row())->getEditText();   //ATTENTION : il faut ici afficher plus (color,...) mais pas tout!
-        return s;
-        }
-
-		//Qt::UserRole is used for sorting. To use the power of regexp and QProxyModel, we will add a special code TODOUR_INACTIVE
-    if(role == Qt::UserRole){
-		QString _prepend="";
-		if (settings.value(SETTINGS_SEPARATE_INACTIVES,DEFAULT_SEPARATE_INACTIVES).toBool())
-			_prepend=(QChar) QChar::LastValidCodePoint;
-	   
-	   	if (tasklist->at(index.row())->isActive()){ //CHANGE
-	    	return tasklist->at(index.row())->getEditText()+" "+TODOUR_INACTIVE;  //CHANGE
-	    }
-	    else{
-	    	return _prepend + tasklist->at(index.row())->getEditText(); //CHANGE
-	    }
-	 }
-
-	if(role == Qt::UserRole+1)  //UserRole+1 is used to sort by inputdate.
-	{
-		return tasklist->at(index.row())->getInputDate()->toString("yyyy-MM-dd"); //CHANGE
-	}
+	if(role == Qt::UserRole+2){  //UserRole+2 returns criticity (int)
+		return taskCriticity(tasklist->at(index.row()));
+      }
+    
 	return QVariant();
 }
 
@@ -233,16 +168,7 @@ bool TodoTableModel::setData(const QModelIndex & index, const QVariant & value, 
   	return true;
 }
 
-bool IdeaTableModel::setData(const QModelIndex & index, const QVariant & value, int role)
-/* 
-*/{
-	QAbstractItemModel::beginResetModel();
-	if(index.column()==1 && role == Qt::EditRole)
-		tasklist->safeEdit(index.row(),value.toString());
-    else return false;
-    QAbstractItemModel::endResetModel();
-  	return true;
-}
+
 
 void TodoTableModel::refresh()
 /*// what is exactly the scope of this?
@@ -271,7 +197,71 @@ void TodoTableModel::refresh()
 }
 
 QString TodoTableModel::toString()
-/* */
-{
+/* Debugging function only
+*/{
 	return QString("model : ")+"\n"+QString("  Contains n tasks: ")+QString::number((int)tasklist->size());
 }
+
+eTaskCriticity TodoTableModel::taskCriticity(task* t) const
+/*returns task criticity
+- the "show inactive" selection (passed to here)
+- the threshold dates
+- the threshold contexts
+- the "treat due as threshold" ?
+- the "today's view". We should be getting a score from (??) 
+
+Todour_NoFilter=0,
+Todour_TodaysView=2,
+Todour_HideThreshold=4,
+Todour_DueAsThreshold=8,
+Todour_ShowInactive=16
+
+
+LEVEL 1 : task with inactive keyword  (2)
+LEVEL 2 : task with threshold in future  (4)
+LEVEL 3 : task with threshold context		(8)
+LEVEL 4 : task with due-reminder in the past	(16)
+LEVEL 5 : task with A-priority, old input date	(32)
+
+*/{
+	QSettings settings;
+//	qDebug()<<"taskCriticity step 1"<<endline;
+	QStringList words = settings.value(SETTINGS_INACTIVE,DEFAULT_INACTIVE).toString().split(';');
+	for (QString i:words){
+		if (t->getRaw().contains(i)){
+//		qDebug()<<"taskCriticity step 1.1"<<endline;
+			return Todour_ShowInactive;
+			break;
+			}
+		}
+// qDebug()<<"taskCriticity step 2"<<endline;
+	if (*(t->getThresholdDate()) > QDateTime::currentDateTime()){
+		return Todour_HideThreshold;
+	}
+	
+	
+	
+//	qDebug()<<"taskCriticity step 3"<<endline;
+	if (t->getDueDate()->addDays(- settings.value(SETTINGS_DUE_WARNING,DEFAULT_DUE_WARNING).toInt()) < QDateTime::currentDateTime()){
+		return Todour_DueAsThreshold;
+	}
+// qDebug()<<"taskCriticity step 4"<<endline;
+	return Todour_NoFilter;
+
+}
+/*	QSettings settings;
+	bool ret=true;
+	
+	ret &= (QDateTime::currentDateTime() >= *(t->getThresholdDate()));
+	if (!ret) return ret;
+	
+	QStringList words = settings.value(SETTINGS_INACTIVE,DEFAULT_INACTIVE).toString().split(';');
+	for (QString i:words){
+		ret &= ! t->getRaw().contains(i);
+		if (!ret) return ret;
+		}
+	// control context threshold?
+	// control due if DUE_AS_THRESHOLD
+	
+	return ret;
+	*/

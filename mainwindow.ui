@@ -50,18 +50,6 @@
         </property>
        </widget>
       </item>
-
-      <item>
-       <widget class="QPushButton" name="syncButton">
-        <property name="CalDAV sync">
-         <string>Sync now</string>
-        </property>
-        <property name="text">
-         <string>Sync</string>
-        </property>
-       </widget>
-      </item>
-
       <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
@@ -75,17 +63,10 @@
         </property>
        </spacer>
       </item>
-      <item>
-       <widget class="QCheckBox" name="cb_threshold_inactive">
-        <property name="text">
-         <string>Show Threshold</string>
-        </property>
-       </widget>
-      </item>
-      <item>
+     <item>
        <widget class="QToolButton" name="btn_Alphabetical">
         <property name="toolTip">
-         <string>Toggle sorting</string>
+         <string>Sorting menu</string>
         </property>
         <property name="text">
          <string/>
@@ -125,6 +106,59 @@
   		
        </widget>
       </item>
+    <item>
+       <widget class="QToolButton" name="btn_Filter">
+        <property name="toolTip">
+         <string>Filter Menu</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="checkable">
+         <bool>false</bool>
+        </property>
+        <widget class="QMenu" name="filterMenu">
+        	<addaction name="todaysViewAction"/>
+        	<addaction name="respectThresholdAction"/>
+        	<addaction name="thresholdDueAction"/>
+        	<addaction name="showInactiveAction"/>
+        </widget>
+         <action name="todaysViewAction">
+   		 <property name="text">
+    	  <string>Today's view</string>
+   		 </property>
+   		 <property name="checkable">
+   		  <bool>true</bool>
+   		 </property>
+  		</action>
+
+        <action name="respectThresholdAction">
+   		 <property name="text">
+    	  <string>Hide threshold</string>
+   		 </property>
+   		 <property name="checkable">
+   		  <bool>true</bool>
+   		 </property>
+  		</action>
+        <action name="thresholdDueAction">
+   		 <property name="text">
+    	  <string>Hide task until reminder</string>
+   		 </property>
+   		 <property name="checkable">
+   		  <bool>true</bool>
+   		 </property>
+  		</action>
+        <action name="showInactiveAction">
+   		 <property name="text">
+    	  <string>Show inactive tasks</string>
+   		 </property>
+   		 <property name="checkable">
+   		  <bool>true</bool>
+   		 </property>
+  		</action> 		
+       </widget>
+      </item>
+
       <item>
        <widget class="QLineEdit" name="lineEditFilter">
         <property name="minimumSize">
@@ -206,31 +240,16 @@ border-radius: 5px;
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
-       <widget class="QListView" name="ideaView">
+       <widget class="QTextEdit" name="noteView">
         <property name="contextMenuPolicy">
          <enum>Qt::CustomContextMenu</enum>
         </property>
         <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarAsNeeded</enum>
+         <enum>Qt::ScrollBarAlwaysOff</enum>
         </property>
-        <property name="autoScroll">
-         <bool>true</bool>
+        <property name="wordWrapMode">
+         <enum>QTextOption::WordWrap</enum>
         </property>
-        <property name="alternatingRowColors">
-         <bool>false</bool>
-        </property>
-        <property name="textElideMode">
-         <enum>Qt::ElideRight</enum>
-        </property>
-        <property name="wordWrap">
-         <bool>false</bool>
-        </property>
-        <attribute name="verticalHeaderVisible">
-         <bool>false</bool>
-        </attribute>
-        <attribute name="verticalHeaderHighlightSections">
-         <bool>false</bool>
-        </attribute>
        </widget>
       </item>
      </layout>
@@ -350,7 +369,6 @@ border-radius: 5px;
     <property name="title">
      <string>Window</string>
     </property>
-    <addaction name="actionShow_All"/>
     <addaction name="actionStay_On_Top"/>
    </widget>
    <addaction name="menuFile"/>
@@ -375,9 +393,6 @@ border-radius: 5px;
     <addaction name="DpriorAction"/>
  	 </widget>
    </widget>
-   <widget class="QMenu" name="ideaMenu">
-   	<addaction name="deleteIdeaAction"/>
-   </widget>
   </widget>
   <action name="actionSave">
    <property name="text">
@@ -387,6 +402,9 @@ border-radius: 5px;
   <action name="actionSync">
    <property name="text">
     <string>Synchronize</string>
+   </property>
+      <property name="enabled">
+    <bool>false</bool>
    </property>
   </action>
   <action name="actionSettings">
@@ -412,14 +430,6 @@ border-radius: 5px;
   <action name="actionQuit">
    <property name="text">
     <string>Quit</string>
-   </property>
-  </action>
-  <action name="actionShow_All">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Show All</string>
    </property>
   </action>
   <action name="actionStay_On_Top">
@@ -503,11 +513,6 @@ border-radius: 5px;
    <string>(D) priority</string>
   </property>
  </action> 
- <action name="deleteIdeaAction">
-  <property name="text">
-   <string>Delete</string>
-  </property>
- </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <tabstops>
@@ -516,7 +521,6 @@ border-radius: 5px;
   <tabstop>lineEditFilter</tabstop>
   <tabstop>archiveButton</tabstop>
   <tabstop>refreshButton</tabstop>
-  <tabstop>syncButton</tabstop>
  </tabstops>
  <resources>
   <include location="resources.qrc"/>

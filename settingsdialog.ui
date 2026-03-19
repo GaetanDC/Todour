@@ -321,9 +321,9 @@
        </item>
 
         <item>
-        <widget class="QCheckBox" name="cb_split_mode">
+        <widget class="QCheckBox" name="cb_note_enable">
          <property name="text">
-          <string>Enable spit mode</string>
+          <string>Use Note view - note.txt</string>
          </property>
         </widget>
        </item>
@@ -342,6 +342,23 @@
          </property>
         </widget>
        </item>
+
+         <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_11">
+			<item>
+			  <widget class="QLabel" name="label_8">
+             <property name="text">
+                <string>Number of tasks for Today's View</string>
+              </property>
+            </widget>
+           </item>
+           <item>
+             <widget class="QSpinBox" name="sb_nn_today"/>
+           </item>
+           </layout>
+          </item>
+
+
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_11">
          <item>

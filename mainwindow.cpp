@@ -12,7 +12,7 @@
 
 #include <QTime>
 #include <QDebug>
-#include <QSettings>
+
 #include <QShortcut>
 #include <QCloseEvent>
 #include <QtAwesome.h>	//used for fonts and icons
@@ -29,7 +29,7 @@
 
 
 TodoTableModel *model=NULL;
-IdeaTableModel* ideas=NULL;
+
 QString saved_selection; // Used for selection memory
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -86,10 +86,6 @@ MainWindow::MainWindow(QWidget *parent) :
     if ( settings.value( SETTINGS_MAXIMIZED, isMaximized() ).toBool() )
         showMaximized();
 
-
-//what is this ???
-    ui->lineEditFilter->setText(settings.value(SETTINGS_SEARCH_STRING,DEFAULT_SEARCH_STRING).toString());
-
     // Check that we have an UUID for this application (used for undo for example)
     if(!settings.contains(SETTINGS_UUID)){
         settings.setValue(SETTINGS_UUID,QUuid::createUuid().toString());
@@ -104,6 +100,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	options.insert("color-active-off",QApplication::palette().color(QPalette::Normal, QPalette::ButtonText));
 	
     ui->btn_Alphabetical->setIcon(awesome->icon(fa::fa_solid, fa::fa_arrow_down_a_z ));
+    ui->btn_Filter->setIcon(awesome->icon(fa::fa_solid, fa::fa_filter));
     ui->archiveButton->setIcon(awesome->icon(fa::fa_solid, fa::fa_right_from_bracket));
     ui->refreshButton->setIcon(awesome->icon(fa::fa_solid, fa::fa_arrows_rotate ));
     ui->addButton->setIcon(awesome->icon(fa::fa_solid, fa::fa_plus ));
@@ -137,8 +134,6 @@ MainWindow::MainWindow(QWidget *parent) :
 		connect(ui->CpriorAction,SIGNAL(triggered()),this,SLOT(on_actionPriorityC()));
 		connect(ui->DpriorAction,SIGNAL(triggered()),this,SLOT(on_actionPriorityD()));
 	   connect(ui->copyAction,SIGNAL(triggered()),this,SLOT(on_actionCopy()));
-		connect(ui->deleteIdeaAction, SIGNAL(triggered()), this, SLOT(on_actionIdeaDelete()));
-
 	//undo
 	_undoStack = new QUndoStack(this);
 		ui->undoAction->setEnabled(_undoStack->canUndo());				
@@ -154,9 +149,21 @@ MainWindow::MainWindow(QWidget *parent) :
     	connect(ui->sortAzAction, SIGNAL(triggered()), this, SLOT(on_actionSortAZ()));
     	connect(ui->sortDateAction, SIGNAL(triggered()), this, SLOT(on_actionSortDate()));
     	connect(ui->sortInactiveAction, SIGNAL(triggered()), this, SLOT(on_actionSortInactive()));    	
+    	connect(ui->todaysViewAction, SIGNAL(triggered()), this, SLOT(on_actionTodaysView()));    	
+//**************************************************************
+
+    	connect(ui->respectThresholdAction, SIGNAL(triggered()), this, SLOT(on_actionRespectThreshold()));
+   	connect(ui->thresholdDueAction, SIGNAL(triggered()), this, SLOT(on_actionThresholdDue()));
+   	connect(ui->showInactiveAction, SIGNAL(triggered()), this, SLOT(on_actionShowInactive()));
+
+    	
+    	
     	
     	ui->btn_Alphabetical->setMenu(ui->sortMenu);
     	ui->btn_Alphabetical->setPopupMode( QToolButton::InstantPopup);
+    	ui->btn_Filter->setMenu(ui->filterMenu);
+    	ui->btn_Filter->setPopupMode( QToolButton::InstantPopup);
+    	
 	
     // Version check
     Version = new todour_version();
@@ -167,29 +174,21 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     // Started. Lets open the todo.txt file, parse it and show it.
-    task_set = new taskset(_undoStack,this);
-    model = new TodoTableModel(task_set,this);
-    ideas = new IdeaTableModel(task_set, this);
+   task_set = new taskset(_undoStack,this);
+   model = new TodoTableModel(task_set,this);
+ 
+   proxyModel = new todoProxyModel(this);
+   proxyModel->setSourceModel(model);
+   ui->tableView->setModel(proxyModel);
+   ui->tableView->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
+   ui->tableView->resizeColumnToContents(0); // Checkboxes kept small
 
-    proxyModel = new QSortFilterProxyModel(this);
-    proxyModel->setSourceModel(model);
-    proxyModel->setFilterRole(Qt::UserRole);
-    proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
-    ui->tableView->setModel(proxyModel);
-    
-    ideaProxyModel = new QSortFilterProxyModel(this);
-    ideaProxyModel->setSourceModel(ideas);
-    ideaProxyModel->setFilterRole(Qt::UserRole);
-    ideaProxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
-    ui->ideaView->setModel(ideaProxyModel);
-    ideaProxyModel->setFilterRegularExpression(QString("^((?!")+QString(TODOUR_INACTIVE)+QString(").)*$"));
-    ideaProxyModel->setFilterKeyColumn(0);
+	note_set = new noteset(_undoStack, this);
+	connect(note_set,SIGNAL(updateText(QString)),this,SLOT(handleNoteUpdate(QString)));
+	note_set->reLoad();	
+//	connect(ui->noteView, SIGNAL(textChanged()),this,SLOT(noteTextChanged()));
 
-    
-    ui->tableView->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
-    ui->tableView->resizeColumnToContents(0); // Checkboxes kept small
 
-//	updateSearchResults();
 
 	ui->context_lock->setChecked(settings.value(SETTINGS_CONTEXT_LOCK,DEFAULT_CONTEXT_LOCK).toBool());
 
@@ -207,10 +206,9 @@ MainWindow::MainWindow(QWidget *parent) :
     //ui->btn_Alphabetical->setChecked(settings.value(SETTINGS_SORT_ALPHA).toBool());
     QObject::connect(model,SIGNAL(dataChanged (const QModelIndex , const QModelIndex )), this, 
     		SLOT(dataInModelChanged(QModelIndex,QModelIndex)));
-    QObject::connect(ideas,SIGNAL(dataChanged (const QModelIndex , const QModelIndex )), this, 
-    		SLOT(dataInModelChanged(QModelIndex,QModelIndex)));
 
-    updateSearchResults(); // Since we may have set a value in the search window
+   ui->lineEditFilter->setText(settings.value(SETTINGS_SEARCH_STRING,DEFAULT_SEARCH_STRING).toString());
+
 	on_actionSortAZ();
 
 	QObject::connect(ui->actionSync,SIGNAL(triggered()),this,SLOT(on_actionSync_triggered()));
@@ -241,21 +239,14 @@ QSettings settings;
     if(!settings.contains(SETTINGS_LIVE_SEARCH))
         		settings.setValue(SETTINGS_LIVE_SEARCH,DEFAULT_LIVE_SEARCH);
     
-	if (settings.value(SETTINGS_SPLIT_MODE,DEFAULT_SPLIT_MODE).toBool()){
-		ui->ideaView->setVisible(true);
-		ui->cb_threshold_inactive->setVisible(false);
-		}
-	else {
-		ui->ideaView->setVisible(false);
-		ui->cb_threshold_inactive->setVisible(true);
-		}
-    ui->actionShow_All->setChecked(settings.value(SETTINGS_SHOW_ALL,DEFAULT_SHOW_ALL).toBool());
+	if (settings.value(SETTINGS_NOTE_ENABLE,DEFAULT_NOTE_ENABLE).toBool())
+		ui->noteView->setVisible(true);
+	else 
+		ui->noteView->setVisible(false);
     ui->actionStay_On_Top->setChecked(settings.value(SETTINGS_STAY_ON_TOP,DEFAULT_STAY_ON_TOP).toBool());
-    ui->cb_threshold_inactive->setChecked(settings.value(SETTINGS_THRESHOLD_INACTIVE,DEFAULT_THRESHOLD_INACTIVE).toBool());
     setTray();
     stayOnTop();
-    
-    
+       
 	//set font size
     int size = settings.value(SETTINGS_FONT_SIZE).toInt();
     if(size >0){
@@ -264,13 +255,10 @@ QSettings settings;
         qApp->setFont(f);
     }
 
-
    task_set->setFileWatch(settings.value(SETTINGS_AUTOREFRESH).toBool(),(QObject*) this);
 
 	updateTitle();
-//- autosave?
-
-}
+	}
 
 
 void MainWindow::dataInModelChanged(QModelIndex i1,QModelIndex i2)
@@ -278,19 +266,17 @@ void MainWindow::dataInModelChanged(QModelIndex i1,QModelIndex i2)
 We need to update the title + ?
 */
 {
-    Q_UNUSED(i2);
-    Q_UNUSED(i1);
-	this->updateTitle();
-    
-}
+    Q_UNUSED(i2)
+    Q_UNUSED(i1)
+	this->updateTitle();  
+	}
 
 MainWindow::~MainWindow()
 /*
 */{
     delete ui;
     delete model;
-    delete ideas;
-}
+	}
 
 void MainWindow::updateTitle()
 /*
@@ -302,20 +288,20 @@ void MainWindow::updateTitle()
 				this->setWindowTitle(baseTitle+" (" +QString::number(visible)+"/"+QString::number(total)+")");
 		else 
 				this->setWindowTitle(baseTitle+" * (" +QString::number(visible)+"/"+QString::number(total)+")");
+		}
 	}
-}
 
 void MainWindow::on_tableView_customContextMenuRequested(const QPoint &pos)
 /*
 */{
 	ui->rClickMenu->popup(ui->tableView->viewport()->mapToGlobal(pos));
-}
+	}
 
-void MainWindow::on_ideaView_customContextMenuRequested(const QPoint &pos)
+void MainWindow::on_noteView_customContextMenuRequested(const QPoint &pos)
 /*
 */{
-	ui->ideaMenu->popup(ui->ideaView->viewport()->mapToGlobal(pos));
-}
+	Q_UNUSED(pos)
+	}
 
 
 void MainWindow::setHotkey(){
@@ -330,79 +316,27 @@ void MainWindow::setHotkey(){
         }
     else {
 //        hotkey->unregisterAllHotkeys();
-    }
+    	}
 
-}
+	}
 
 
 void MainWindow::on_lineEditFilter_textEdited(const QString &arg1)
 /* User edited the "filter" field. If liveupdate settings is activates, we have to inform the Proxymodel of the change
 */{
 	QSettings settings;
-    Q_UNUSED(arg1);
-    if(!ui->actionShow_All->isChecked() && settings.value(SETTINGS_LIVE_SEARCH).toBool()){
-        updateSearchResults();
+    if(settings.value(SETTINGS_LIVE_SEARCH,DEFAULT_LIVE_SEARCH).toBool()){
+        proxyModel->updateFilterText(arg1);
     }
-}
-
-void MainWindow::on_cb_threshold_inactive_stateChanged(int arg1)
-/* This is the "Show threshold" selection switch. 
-	- when changed, refresh the list
-	- when inactive, hide all "inactive" tasks
-	- when active, show all "inactive" tasks
-*/{
-	QSettings settings;
-    settings.setValue(SETTINGS_THRESHOLD_INACTIVE,arg1);
-	updateSearchResults();
 }
 
 void MainWindow::on_lineEditFilter_returnPressed()
 /* 
 */{
 	QSettings settings;
-    bool liveUpdate = settings.value(SETTINGS_LIVE_SEARCH).toBool();
-
-    if(!liveUpdate || ui->actionShow_All->isChecked()){
-        updateSearchResults();
+    if(!settings.value(SETTINGS_LIVE_SEARCH,DEFAULT_LIVE_SEARCH).toBool()){
+        proxyModel->updateFilterText(ui->lineEditFilter->text());
     }
-}
-
-void MainWindow::updateSearchResults()
-/* For any reason, the filters have changed (toggle_threshold, text filter, ...)
-	We need to adapt.
-*/{
-    // Take the text of the format of match1 match2 !match3 and turn it into
-    //(?=.*match1)(?=.*match2)(?!.*match3) - all escaped of course   
-	QSettings settings;    
-    QChar search_not_char = settings.value(SETTINGS_SEARCH_NOT_CHAR,DEFAULT_SEARCH_NOT_CHAR).toChar();
-    QStringList words = ui->lineEditFilter->text().split(QRegularExpression("\\s+"));
-    bool show_thr = (ui->cb_threshold_inactive->checkState() == Qt::Checked);
- 	Q_UNUSED(show_thr);
-    QString regexpstring="(?=^.*$)"; // Seems a negative lookahead can't be first (!?), so this is a workaround
-    #define START "(?=^.*"
-    #define STARTN "(?!^.*"
-    for(QString word:words){
-        if(word.length()==0) break;
-
-        if(word.at(0)==search_not_char){
-        	regexpstring += STARTN+QRegularExpression::escape(word.remove(0,1))+".*$)";
-        }else{
-	        regexpstring += START+QRegularExpression::escape(word)+".*$)";
-    	}
-    }
-
-    if (!settings.value(SETTINGS_THRESHOLD_INACTIVE,DEFAULT_THRESHOLD_INACTIVE).toBool() 
-    			|| ui->cb_threshold_inactive->checkState()==Qt::Unchecked)
-    {
-    	regexpstring +=START;
-    	regexpstring +=TODOUR_INACTIVE;
-    	regexpstring +=".*$)";	 
-    } 
-
-    QRegularExpression regexp(regexpstring);	
-    proxyModel->setFilterRegularExpression(regexp);
-    proxyModel->setFilterKeyColumn(1);
-    updateTitle();
 }
 
 void MainWindow::on_actionSortAZ()
@@ -410,8 +344,7 @@ void MainWindow::on_actionSortAZ()
 */{
 	ui->sortDateAction->setChecked(false);
 	ui->sortAzAction->setChecked(true);
-
-	updateSort();
+	proxyModel->sort_by_az();
 }
 
 void MainWindow::on_actionSortDate()
@@ -419,7 +352,7 @@ void MainWindow::on_actionSortDate()
 */{
 	ui->sortAzAction->setChecked(false);
 	ui->sortDateAction->setChecked(true);
-	updateSort();
+	proxyModel->sort_by_inputdate();
 }
 
 void MainWindow::on_actionSortInactive()
@@ -427,23 +360,70 @@ void MainWindow::on_actionSortInactive()
 */{
 	QSettings settings;
 	settings.setValue(SETTINGS_SEPARATE_INACTIVES,ui->sortInactiveAction->isChecked());
-	updateSort();
-	
+	proxyModel->sort_InactiveLast(settings.value(SETTINGS_SEPARATE_INACTIVES,DEFAULT_SEPARATE_INACTIVES).toBool());
 }
 
-void MainWindow::updateSort()
-/* 
+/*
+enum eTaskCriticity{
+Todour_TodaysView=2,
+Todour_HideThreshold=4,
+Todour_DueAsThreshold=8,
+Todour_ShowInactive=16
+};
+*/
+
+
+void MainWindow::on_actionTodaysView()
+/* Shows the todays View.
+This contains only the active tasks, tasks get a score, we show only the nn first.
+nn can be in options.
 */{
-	proxyModel->invalidate();
-	if(ui->sortAzAction->isChecked()){
-		proxyModel->setSortRole(Qt::UserRole);
-		proxyModel->sort(1,Qt::AscendingOrder);
-	}
-	else if(ui->sortDateAction->isChecked()){
-		proxyModel->setSortRole(Qt::UserRole+1);
-		proxyModel->sort(1,Qt::DescendingOrder);
-	}
+	proxyModel->updateFilterLevel(Todour_TodaysView);
+	if (ui->todaysViewAction->isChecked()){
+		ui->respectThresholdAction->setEnabled(false);
+   	ui->thresholdDueAction->setEnabled(false);
+   	ui->showInactiveAction->setEnabled(false);
+		}
+	else{
+		ui->respectThresholdAction->setEnabled(true);
+   	ui->thresholdDueAction->setEnabled(true);
+   	ui->showInactiveAction->setEnabled(true);
+		}
 }
+
+void MainWindow::on_actionRespectThreshold()
+/* This is the "Show threshold" selection switch. 
+	- when changed, refresh the list
+	- when inactive, hide all "inactive" tasks
+	- when active, show all "inactive" tasks
+*/{
+	QSettings settings;
+   settings.setValue(SETTINGS_THRESHOLD_INACTIVE,ui->respectThresholdAction->isChecked());
+
+// Here we have to compute the filter value.
+	if (ui->respectThresholdAction->isChecked())
+		proxyModel->updateFilterLevel(Todour_HideThreshold);
+	else
+		proxyModel->updateFilterLevel(Todour_NoFilter);
+}
+
+
+void MainWindow::on_actionThresholdDue()
+/* */{
+	if (ui->thresholdDueAction->isChecked())
+		proxyModel->updateFilterLevel(Todour_DueAsThreshold);
+	else
+		proxyModel->updateFilterLevel(Todour_NoFilter);
+}
+
+void MainWindow::on_actionShowInactive()
+/* */{
+	if (ui->showInactiveAction->isChecked())
+		proxyModel->updateFilterLevel(Todour_ShowInactive);
+	else
+		proxyModel->updateFilterLevel(Todour_NoFilter	);
+}
+
 
 void MainWindow::on_actionCopy()
 /* Copy the selected tasks to clipboard
@@ -457,7 +437,6 @@ void MainWindow::on_actionCopy()
 			}
 		QClipboard *clipboard = QGuiApplication::clipboard();
 		clipboard->setText(text, QClipboard::Clipboard);
-
 		}
 }
 
@@ -559,7 +538,6 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 
 void MainWindow::on_addButton_clicked()
 /* */{
-   QSettings settings;
 	QString txt = ui->lineEditNew->text();
 	QString context = "";
     if(ui->context_lock->isChecked()){
@@ -588,12 +566,10 @@ void MainWindow::on_addButton_clicked()
 void MainWindow::addTodo(QString &s, QString cont)
 /* 
 */{
-	QSettings settings;
 	task* t = new task(s,cont);
 	task_set->safeAdd(t);
 
 	model->refresh();
-	ideas->refresh();
    updateTitle();
 }
 
@@ -603,8 +579,7 @@ void MainWindow::on_archiveButton_clicked()
 //TODO: refresh the view
 
 	task_set->archive();
-    _undoStack->clear(); //no undo possible anymore.
-	
+    _undoStack->clear(); //no undo possible anymore.	
     updateTitle();
 }
 
@@ -612,54 +587,40 @@ void MainWindow::on_refreshButton_clicked()
 /*// This is the Refresh button
 */{
     model->refresh();
-    ideas->refresh();
     updateTitle();
 }
 
-void MainWindow:: on_syncButton_clicked()
-/* This is the sync button. It should initiate a sync, according to QSettings + eventually ask a password
-TODO: this is currently only used for testing the second task window.
-*/{
-//	if (ui->ideaView->isVisible()){
-//		ui->ideaView->setVisible(false);
-//		ui->cb_threshold_inactive->setVisible(true);}
-//	else {
-//		ui->ideaView->setVisible(true	);
-//		ui->cb_threshold_inactive->setVisible(false);}
-	ui->actionSync->trigger();
-	}
-
-
 void MainWindow::on_actionSave_triggered()
 /* */{
-	if (_undoStack->isClean()) //nothing to do
-			return;
-	task_set->flush();
-    _undoStack->setClean();
+	if (! _undoStack->isClean()){
+		task_set->flush();
+   	_undoStack->setClean();
+   	}
+   note_set->handleTextChanged(ui->noteView->toPlainText());
 }
 
 void MainWindow::cleanup()
 /* */{
 	QSettings settings;
 	qDebug()<<"Clean up ..."<<endline;	
-
-	task_set->flush();
-    settings.setValue( SETTINGS_GEOMETRY, saveGeometry() );
-    settings.setValue( SETTINGS_SAVESTATE, saveState() );
-    settings.setValue( SETTINGS_MAXIMIZED, isMaximized() );
-    settings.setValue(SETTINGS_SEARCH_STRING,ui->lineEditFilter->text());
-    if(trayicon!=NULL){
-        delete trayicon;
-        trayicon = NULL;
-    }
+	on_actionSave_triggered();
+   settings.setValue( SETTINGS_GEOMETRY, saveGeometry() );
+   settings.setValue( SETTINGS_SAVESTATE, saveState() );
+   settings.setValue( SETTINGS_MAXIMIZED, isMaximized() );
+   settings.setValue(SETTINGS_SEARCH_STRING,ui->lineEditFilter->text());
+   if(trayicon!=NULL){
+   	delete trayicon;
+   	trayicon = NULL;
+   	}
+    
     qApp->quit();
 }
 
 void MainWindow::closeEvent(QCloseEvent *ev)
 /* */{
     if (trayicon != NULL && trayicon->isVisible()) {
-            hide();
-            ev->ignore();
+		hide();
+		ev->ignore();
     } else {
         cleanup();
         ev->accept();
@@ -677,13 +638,6 @@ void MainWindow::on_pb_closeVersionBar_clicked()
     ui->newVersionView->hide();
 }
 
-void MainWindow::on_actionShow_All_changed()
-/* */{
-	QSettings settings;
-    settings.setValue(SETTINGS_SHOW_ALL,ui->actionShow_All->isChecked());
-    on_refreshButton_clicked();
-}
-
 void MainWindow::on_actionStay_On_Top_changed()
 /* */{
 	QSettings settings;
@@ -695,7 +649,6 @@ void MainWindow::on_actionUndo()
 /* */{
 	_undoStack->undo();
 	model->refresh();
-	ideas->refresh();
 	updateTitle();
 }
 
@@ -703,43 +656,39 @@ void MainWindow::on_actionRedo()
 /* */{
 	_undoStack->redo();
 	model->refresh();
-	ideas->refresh();
 	updateTitle();
 }
 
 void MainWindow::on_actionSpace()
 /*  */{
-   QModelIndex index = proxyModel->mapToSource(ui->tableView->selectionModel()->currentIndex());
-    if(index.isValid()){
-        //model->toggleDone(index);
-        ui->tableView->selectionModel()->setCurrentIndex(proxyModel->mapFromSource(index), QItemSelectionModel::SelectCurrent);
-    }
-    
+   QModelIndex index = ui->tableView->selectionModel()->currentIndex();
+   if(index.isValid())
+	   	task_set->safeToggleComplete((proxyModel->mapToSource(index)).row());
+  	model->refresh();
+	updateTitle();
+   
 }
 
 void MainWindow::on_actionEdit()
 /* User clicked on "Edit". We enable the editing of the line.
 */{
-// #TODO: check that the selection is valid before using it
    QModelIndex index = proxyModel->mapToSource(ui->tableView->selectionModel()->currentIndex());
-    if(index.isValid()){
-        ui->tableView->edit(index);
-    }
+    if(index.isValid())
+     	   ui->tableView->edit(index);
 }
 
 void MainWindow::on_actionComplete()
 /* user clicked "Complete" on a set of tasks. 
 */{
 	_undoStack->beginMacro("completion");
-    QModelIndexList indexes = ui->tableView->selectionModel()->selection().indexes();
+   QModelIndexList indexes = ui->tableView->selectionModel()->selection().indexes();
 	for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
 		task_set->safeComplete((proxyModel->mapToSource(*i)).row(),true);
 		}
 		
 	_undoStack->endMacro(); 
 	model->refresh();
-    updateTitle();
-
+   updateTitle();
 }
 
 void MainWindow::on_actionDelete()
@@ -759,35 +708,9 @@ void MainWindow::on_actionDelete()
 		
 		_undoStack->endMacro();    
 		model->refresh();
-//		ideas->refresh();
     	updateTitle();
     }
 }
-
-
-void MainWindow::on_actionIdeaDelete()
-/*User clicked on "Delete" in the idea window. We remove the selected items
-*/{
-    QModelIndexList indexes = ideaProxyModel->mapSelectionToSource(ui->ideaView->selectionModel()->selection()).indexes();
-    QList<QUuid> tuidL;
-	if (!indexes.isEmpty()){
-		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-		    tuidL.push_back(model->getTask(*i)->getTuid());
-		}
-
-		_undoStack->beginMacro("deletion");			
-		for (QList<QUuid>::iterator j=tuidL.begin();j!=tuidL.end();++j){
-			task_set->safeDelete(*j);
-		}
-		
-		_undoStack->endMacro();    
-//		model->refresh();
-		ideas->refresh();
-    	updateTitle();
-    }
-
-}
-
 
 void MainWindow::on_actionPostpone()
 /* User clicked on Postpone. We postpone the task for a default value.
@@ -816,7 +739,6 @@ void MainWindow::on_actionDuplicate()
 		}
 		_undoStack->endMacro();   
 		model->refresh(); 
-		ideas->refresh();
 		updateTitle();
 	}
  }
@@ -824,15 +746,13 @@ void MainWindow::on_actionDuplicate()
 
 void MainWindow::on_actionPriority(QChar p)
 /* 
-  #TODO  the undo_cmd should be in the model
 */{
    QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
     if(!indexes.empty()){
-   		_undoStack->beginMacro("completion");
-	    for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
+   	_undoStack->beginMacro("completion");
+	   for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
 			task_set->safePriority(i->row(), p);
-		}
-
+			}
 		_undoStack->endMacro();   
 	    model->refresh();
 	    updateTitle();
@@ -853,6 +773,7 @@ void MainWindow::new_version(QString text)
 
 void MainWindow::on_actionPrint_triggered()
 /* The user has clicked on "Print". We print the selected tasks
+#TODO: consider printing the notes...
 */{
     auto selection = ui->tableView->selectionModel();
     if(selection->hasSelection()){
@@ -876,19 +797,15 @@ void MainWindow::on_actionPrint_triggered()
 }
 
 void MainWindow::on_actionSync_triggered()
-/*The user has clicked on "synchronize. We now should
-	1. try to connect to the caldav server in settings. 
-  		if error, show a message and stop
-	2. get list of tasks from server
-		+ for each local & remote tasks, check timestamp
-	3. update local or remote
-	
-	QUESTIONS: 
-	- where is the best place to do each task? not here...
-	- we added a TUID to the tasks, but there is no timestamp...  :-(
+/* Not implemented yet
   */
-{
-//Why a function from a function ???
-	task_set->synchronize();
+{qDebug()<<"Sync not implemented"<<endline;
 }
 
+
+void MainWindow::handleNoteUpdate(QString txt)
+/*
+	note subsystem wants to change note content...
+*/{
+	ui->noteView->setPlainText(txt);
+}

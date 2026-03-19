@@ -60,9 +60,7 @@ void DeleteCommand::redo()
 /* */
 {
 	// as far as I know, <vector> doesn't actually delete the object.
-	//_task=_model->getTask(_tuid);
 	_task = tasklist->removeTask(_tuid);
-	//qDebug()<<"DeleteCommand::redo()  _task="<<_task->toString()<<endline;
 }
 
 int DeleteCommand::id() const
@@ -81,13 +79,11 @@ bool DeleteCommand::mergeWith(const QUndoCommand *other)
 
 // §§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§
 
-EditCommand::EditCommand(taskset* _list, task* t, QString new_raw, QUndoCommand *parent)
-    :QUndoCommand(parent), _task(t), tasklist(_list)
+EditCommand::EditCommand(taskset* _list, task* t, QString _new_raw, QUndoCommand *parent)
+    :QUndoCommand(parent), tasklist(_list), _task(t), new_raw(_new_raw)
 /* */
 {
-	_old_raw = t->getRaw();
-	 _new_raw = new_raw;
-
+	old_raw = t->getRaw();
 	setText("Edit");
 }
 
@@ -98,13 +94,13 @@ EditCommand::~EditCommand()
 void EditCommand::undo()
 /* */
 {
-	_task->setRaw(_old_raw);
+	_task->setRaw(old_raw);
 }
 
 void EditCommand::redo()
 /* */
 {
-	_task->setRaw(_new_raw);
+	_task->setRaw(new_raw);
 }
 
 int EditCommand::id() const
@@ -221,11 +217,10 @@ PostponeCommand::PostponeCommand(taskset* _list, task* t, QString postp, QUndoCo
 {
 //	QSettings
 	setText("Postpone");
-	_new_raw = _old_raw + " " + postp;
+	new_raw = old_raw + " " + postp;
 }
 
 PostponeCommand::~PostponeCommand()
 /* #TODO  check*/
 {}
-
 

@@ -8,7 +8,6 @@
 #include "ui_settingsdialog.h"
 #include "def.h"
 
-#include <QSettings>
 
 // #TODO: add a GUI setting for the caldav backend. Any other option to be expected?   Possible is None, CalDav.
 
@@ -42,8 +41,8 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui->search_not_char->setText(settings.value(SETTINGS_SEARCH_NOT_CHAR,DEFAULT_SEARCH_NOT_CHAR).toChar());
     ui->cb_default_threshold->setCurrentText(settings.value(SETTINGS_DEFAULT_THRESHOLD,DEFAULT_DEFAULT_THRESHOLD).toString());
     ui->default_priority->setText(settings.value(SETTINGS_DEFAULT_PRIORITY,DEFAULT_DEFAULT_PRIORITY).toString());
-	 ui->cb_split_mode->setChecked(settings.value(SETTINGS_SPLIT_MODE,DEFAULT_SPLIT_MODE).toBool());
-
+	 ui->cb_note_enable->setChecked(settings.value(SETTINGS_NOTE_ENABLE,DEFAULT_NOTE_ENABLE).toBool());
+	 ui->sb_nn_today->setValue(settings.value(SETTINGS_NN_TODAY,DEFAULT_NN_TODAY).toInt());
     // Business days
     QList<int> business_days = settings.value(SETTINGS_BUSINESS_DAYS, QVariant::fromValue(QList<int>())).value<QList<int> >();
     if(business_days.size()==0){
@@ -112,7 +111,7 @@ void SettingsDialog::on_buttonBox_accepted()
     settings.setValue(SETTINGS_DEFAULT_THRESHOLD,ui->cb_default_threshold->currentText());
     settings.setValue(SETTINGS_FONT_SIZE,ui->sb_fontSize->value());
     settings.setValue(SETTINGS_REMOVE_DOUBLETS,ui->cb_removeDoublets->isChecked());
-    settings.setValue(SETTINGS_SPLIT_MODE,ui->cb_split_mode->isChecked());
+    settings.setValue(SETTINGS_NOTE_ENABLE,ui->cb_note_enable->isChecked());
     if(ui->search_not_char->text().size()>0)
         	settings.setValue(SETTINGS_SEARCH_NOT_CHAR,ui->search_not_char->text().at(0));
     if(ui->default_priority->text().size()>0)

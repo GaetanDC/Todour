@@ -19,10 +19,22 @@ Author Gaetan DC
 #include <QDebug>
 #include <QDateTime>
 
+
+enum eTaskCriticity{
+Todour_NoFilter=0,
+Todour_TodaysView=2,
+Todour_HideThreshold=4,
+Todour_DueAsThreshold=8,
+Todour_ShowInactive=16
+};
+
+
 class task
 {
 private:
 	QString _raw;
+	QString displayText;
+	QString description;
 	QUuid _tuid;
 	QDateTime _ttag;
 	QDateTime _complete_date;
@@ -33,6 +45,7 @@ private:
 	QDateTime thrD;
 	Qt::CheckState complete ;
 	bool active;
+	QStringList contexts;
 	
 public:
 	task(QString s="", QString context="", bool loaded=false);
@@ -43,19 +56,16 @@ public:
 	bool is_txt_compatible();
 
 	void setDueDate(QDateTime d);
-	
 	void setThresholdDate(QDateTime d);
 	void setInputDate(QDateTime d);
-	
 	void setColor(QString c);
 	void setColor(QColor c);
-	
 	void setDescription(QString s);
 	void setPriority(QChar c);
-	task* setComplete(bool c = true);
+	task* setComplete(bool c = true); // manage the rec:...
 	void setRaw(QString s);
 
-	void forceActive(bool state);
+	void forceActive(bool state); // BAD CODE!
 	
 	inline QDateTime const *getDueDate() {return &dueD;};
 	inline QDateTime const *getThresholdDate() {return &thrD;};
@@ -64,26 +74,18 @@ public:
 	inline QColor const *getColor() {return &color;};
 	inline QUuid getTuid() const{return _tuid;}
 	inline Qt::CheckState isComplete() const {return complete;};
-	/*  */
-	
+	inline QString getDisplayText() const {return displayText;};	/* text for display in todour*/
+	inline QString getRaw() const {return _raw;};	/* returns the full text, used for edit */
+	inline QString getEditText() const {return _raw;};/* text for edit in Todour*/
+	inline QString getDescription() const {return description;}; 	/* text for display in future tool. return only the descriptive part of the text, without t: due: color: utid: ...   TODO*/
+	bool isActive() const;
+	inline QDateTime getTimeStamp() const {return _ttag;}  //for future sync
+	inline bool operator==(task &t){return t.getTuid()==_tuid;}
+	inline QStringList getContexts(){return contexts;};
+	inline QStringList getThresholdContexts(){return contexts;};
 	void refreshActive(QDateTime now);
 	
-	inline bool isActive() const {return active;};
-	/* */
-
-	QString getURL() const;
-
-	inline QString getRaw() const {return _raw;};
-	/* returns the full text, used for edit */
-	
-	QString getDisplayText() const;
-	/* text for display in todour*/
-	
-	inline QString getEditText() const {return _raw;};
-	/* text for edit in Todour*/
-	
-	QString getDescription() const;
-	/* text for display in future tool. return only the descriptive part of the text, without t: due: color: utid: ...   TODO*/
+	QString getURL() const;	
 	
 	QString toSaveString() const;
 	/*returns the full QString for saving, including all hidden data.*/
@@ -94,23 +96,12 @@ public:
 	QString toString() const;
 	/*returns the full QString for debugging*/
 
-	inline QDateTime getTimeStamp() const {return _ttag;}
-
-
-
 // === static functions ===
 	static QDateTime getRelativeDate(QString d, const QDateTime *base = nullptr);
-	static void taskTestSession();	
-	
-	inline bool operator==(task &t){return t.getTuid()==_tuid;}
 	
 	
 protected:
 	void parse(QString s, bool strict=false);
-
-	
-	
-private:
 };
 
 #endif // TASK_H

@@ -2,7 +2,6 @@
 #include "def.h"
 #include <QDebug>
 #include <QRegularExpression>
-#include <QSettings>
 
 #define DATE_PAT QString("\\d\\d\\d\\d-\\d\\d-\\d\\d")
 #define RDATE_PAT QString("\\+(?<n>\\d+)(?<u>[dwmypb])")
@@ -23,13 +22,17 @@ static QRegularExpression     regex_due_date_r("(?:\\s+)(due:" + RDATE_PAT + ")(
 static QRegularExpression regex_rec("(?:\\s+)(rec:" + RDATE_PAT+")(?#\\s+|$)"); 
 
 //preamble    //^(?:x\s+(?:\d\d\d\d-\d\d-\d\d\s)?)?(?:\(\w\)\s+)?(?:\d\d\d\d-\d\d-\d\d\s+)?
-static QRegularExpression regex_preamble("^(?<pxd>x\\s+"+DATE_PAT+"\\s)?(?<px>x\\s)?\\s*(?<ppr>\\(\\w\\)\\s)?\\s*(?<pid>"+DATE_PAT+"\\s)?\\s*(?<ptk>.*)$");
+static QRegularExpression regex_preamble("^(?<pxd>x\\s+(?:"+DATE_PAT+"\\s)?)?\\s*(?<ppr>[(][a-z,A-Z][)]\\s)?\\s*(?<pid>"+DATE_PAT+"\\s)?\\s*(?<ptk>.*)$");
 static QRegularExpression regex_done        ("^(x\\s+)"); // x 2025-03-01
 static QRegularExpression regex_completedate("^(x\\s+("+DATE_PAT+")?\\s+)");
 static QRegularExpression regex_priority("^(?:x\\s+(?="+DATE_PAT+")?)?(\\(\\w\\)\\s+)"); //(B) 2025-05-05
-static QRegularExpression regex_inputdate("^(?:x\\s)?(?:x\\s+"+DATE_PAT+"\\s)?\\s*(?:\\(\\w\\)\\s)?\\s*(?<p>"+DATE_PAT+")");
+static QRegularExpression regex_inputdate("^((?:x\\s)|(?:x\\s+"+DATE_PAT+"\\s))?\\s*(?:[(][a-z,A-Z][)]\\s)?\\s*(?<p>"+DATE_PAT+")");
+//^((?:x\s)|(?:x\s+\d\d\d\d-\d\d-\d\d\s))?\s*(?:[(][A-Z,a-z][)]\s)?\s*(?<idate>\d\d\d\d-\d\d-\d\d)
 
 static QRegularExpression regex_todo_line("((^(?:x )+("+DATE_PAT+"(?:\\s+|$))?)+(?<donedate>"+DATE_PAT+"(?:\\s*|$))?)?(?<priority>"+regex_priority.pattern()+")?(?<inputdate>"+DATE_PAT+"(?:\\s*|$))?(.*)");
+
+static QRegularExpression regex_context("(?:\\s+)((\\@[^\\s]+)|(\\+[^\\s]+))(?#\\s+|$)");
+
 
 
 
@@ -186,6 +189,19 @@ void task::parse(QString s,bool strict)
 		else
 			priority = QChar::Null;
 	}
+
+	matches = regex_inputdate.globalMatch(_raw);
+	if (matches.hasNext()){
+		auto nnn=matches.next();
+
+		QDateTime d=QDateTime::fromString(nnn.captured("p"),"yyyy-MM-dd");
+		if (d.isValid())
+			inputD=d;
+		else
+			inputD=QDateTime();
+	}
+
+
 	
 	QString c;
 	matches = regex_color.globalMatch(_raw);
@@ -202,8 +218,43 @@ void task::parse(QString s,bool strict)
 
 	this->refreshActive(QDateTime::currentDateTime());
 
+	displayText = _raw;	
+	matches = regex_preamble.globalMatch(_raw);
+	if (matches.hasNext())
+	{
+		auto nn=matches.next();
+		displayText=nn.captured("ptk");
+		if (settings.value(SETTINGS_SHOW_DATES,DEFAULT_SHOW_DATES).toBool())
+				displayText.prepend(nn.captured("pid"));
+				
+		displayText.prepend(nn.captured("ppr"));
+		
+	}
+	displayText.remove(regex_color);
+
+	description = displayText;
+	//description .remove(regex_color);
+	//description .remove(regex_done);
+	description .remove(regex_threshold_date);
+	description .remove(regex_due_date);
+	description .remove(regex_rec); 
+
+
+
+	QRegularExpressionMatchIterator matcher = regex_context.globalMatch(_raw);
+	while (matcher.hasNext()) {
+ 	   contexts << matcher.next().captured(1); //we don't care about duplicates...
+ 	   }
+
 //	qDebug()<<"task::parse "<<toString()<<endline;
 }
+
+bool task::isActive() const
+{
+qDebug()<<"task:isActive() DEPRECATED"<<endline;
+return active;
+}
+
 
 
 void task::setDueDate(QDateTime d)
@@ -372,40 +423,6 @@ QString task::getURL() const
     }
 }
 
-QString task::getDisplayText() const
-/* text for display in todour*/
-{
-	QSettings settings;
-	QString display = _raw;	
-	auto matches = regex_preamble.globalMatch(_raw);
-	if (matches.hasNext())
-	{
-		auto nn=matches.next();
-		display=nn.captured("ptk");
-		if (settings.value(SETTINGS_SHOW_DATES,DEFAULT_SHOW_DATES).toBool())
-				display.prepend(nn.captured("pid"));
-				
-		display.prepend(nn.captured("ppr"));
-		
-	}
-	display.remove(regex_color);
-	return display;
-}
-
-
-QString task::getDescription() const
-/* returns only the descriptive part of the text, without t: due: color:
-*/
-{
-	qDebug()<<"   task::getDescription not optimised"<<endline;
-	QString ret = _raw;
-	ret.remove(regex_color);
-	ret.remove(regex_done);
-	ret.remove(regex_threshold_date);
-	ret.remove(regex_due_date);
-	ret.remove(regex_rec);
-	return ret;
-} 
 
 QString task::toSaveString() const
 /* returns the full QString for saving, including all hidden data.
@@ -450,6 +467,7 @@ void task::refreshActive(QDateTime now)
 	#TODO: remove from here all the QSettings part, to be done upper, will be fast thanks to new _valid model.
 */
 {
+qDebug()<<"DEPRECATED task::refreshActive"<<endline;
 	QSettings settings;
 	bool ret=true;
 	ret &= (now >= thrD);
@@ -512,39 +530,4 @@ QDateTime task::getRelativeDate(QString d, const QDateTime* base)
         }
         //return d.toString("yyyy-MM-dd")+extra;
         return ret;
-}
-
-
-
-void task::taskTestSession()
-{
-//	qDebug()<<"Testing regularExpression : "<<task::testRegularExpressions()<<endline;
- 	//test zone
-
-	qDebug()<<"Test zone: "<<endline;
-//	task *t = new task ("(B) This is a full test task");
-//	qDebug()<<"Created. Let's test:"<<endline;
-
-	QString ttt = "(B) 2025-05-09 test task";
-	auto matches = regex_preamble.globalMatch(ttt);
-	while (matches.hasNext())
-	{
-		auto nn=matches.next();
-		qDebug()<<"  test m1c0:"<<nn.captured("px")<<endline;
-		qDebug()<<"  test m1c1:"<<nn.captured("pxd")<<endline;
-		qDebug()<<"  test m1c2:"<<nn.captured("ppr")<<endline;
-		qDebug()<<"  test m1c2:"<<nn.captured("pid")<<endline;
-		qDebug()<<"  test m1c2:"<<nn.captured("ptk")<<endline;
-	
-	QString t=nn.captured("ptk");
-	t.prepend(nn.captured("ppr"));
-	qDebug()<<"original: "<<ttt<<endline;
-	qDebug()<<"modified: "<<t<<endline;
-
-	}
-
-	
-
-
-qDebug()<<"End of test session"<<endline<<endline<<endline<<endline;
 }
