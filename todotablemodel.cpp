@@ -127,29 +127,23 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
 			return QVariant::fromValue(tasklist->at(index.row())->getColor()->lighter(180));  //CHANGE
 	}
 
-		//Qt::UserRole is used for sorting. To use the power of regexp and QProxyModel, we will add a special code TODOUR_INACTIVE to be removed with the new proxy  TO BE REMOVED !!!
-    if(role == Qt::UserRole){
-		QString _prepend="";
-		if (settings.value(SETTINGS_SEPARATE_INACTIVES,DEFAULT_SEPARATE_INACTIVES).toBool())
-			_prepend=(QChar) QChar::LastValidCodePoint;
-	   
-	   	if (tasklist->at(index.row())->isActive()){ //CHANGE
-	    	return tasklist->at(index.row())->getEditText()+" "+TODOUR_INACTIVE;  //CHANGE
-	    }
-	    else{
-	    	return _prepend + tasklist->at(index.row())->getEditText(); //CHANGE
-	    }
-	 }
-
 	if(role == Qt::UserRole+1){  //UserRole+1 returns inputdate
-	qDebug()<<"todotablemodel.cpp: inputdate="<<tasklist->at(index.row())->getInputDate()->toString("yyyy-MM-dd")<<endline;
 		return QVariant(*(tasklist->at(index.row())->getInputDate()));
 	}
 
-	if(role == Qt::UserRole+2){  //UserRole+2 returns criticity (int)
-		return taskCriticity(tasklist->at(index.row()));
+	if(role == Qt::UserRole+2){  //UserRole+2 returns active state (bool)
+		return tasklist->at(index.row())->isActive();
       }
-    
+
+	if(role == Qt::UserRole+3){  //UserRole+3 returns thresholddate
+		return QVariant(*(tasklist->at(index.row())->getThresholdDate()));
+	}
+
+	if(role == Qt::UserRole+4){  //UserRole+4 returns duedate
+		return QVariant(*(tasklist->at(index.row())->getDueDate()));
+	}
+        
+   
 	return QVariant();
 }
 
@@ -202,7 +196,8 @@ QString TodoTableModel::toString()
 	return QString("model : ")+"\n"+QString("  Contains n tasks: ")+QString::number((int)tasklist->size());
 }
 
-eTaskCriticity TodoTableModel::taskCriticity(task* t) const
+
+//eTaskCriticity TodoTableModel::taskCriticity(task* t) const
 /*returns task criticity
 - the "show inactive" selection (passed to here)
 - the threshold dates
@@ -210,11 +205,11 @@ eTaskCriticity TodoTableModel::taskCriticity(task* t) const
 - the "treat due as threshold" ?
 - the "today's view". We should be getting a score from (??) 
 
-Todour_NoFilter=0,
+Todour_NoFilter=0,  active=true
 Todour_TodaysView=2,
 Todour_HideThreshold=4,
 Todour_DueAsThreshold=8,
-Todour_ShowInactive=16
+Todour_ShowInactive=16  active=false
 
 
 LEVEL 1 : task with inactive keyword  (2)
@@ -223,7 +218,8 @@ LEVEL 3 : task with threshold context		(8)
 LEVEL 4 : task with due-reminder in the past	(16)
 LEVEL 5 : task with A-priority, old input date	(32)
 
-*/{
+*/
+/*{
 	QSettings settings;
 //	qDebug()<<"taskCriticity step 1"<<endline;
 	QStringList words = settings.value(SETTINGS_INACTIVE,DEFAULT_INACTIVE).toString().split(';');

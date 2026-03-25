@@ -11,8 +11,8 @@ static QRegularExpression regex_reldate("(?<rdate>"+RDATE_PAT+")(?:\\s*|$)");
 
 static QRegularExpression regex_url("(?:\\s+)[a-zA-Z0-9_]+:\\/\\/([-a-zA-Z0-9@:%_\\+.~#?&\\/=\\(\\)\\{\\}\\\\]*)");
 static QRegularExpression regex_color("(?:\\s+)color:([a-z]*)");
-static QRegularExpression regex_threshold_project("(?:\\s+)t:(\\+[^\\s]+)(?#\\s+|$)");
-static QRegularExpression regex_threshold_context("(?:\\s+)t:(\\@[^\\s]+)(?#\\s+|$)");
+//static QRegularExpression regex_threshold_project("(?:\\s+)t:(\\+[^\\s]+)(?#\\s+|$)");
+static QRegularExpression regex_threshold_context("(?:\\s+)t:(\\@[^\\s]+)|(\\+[^\\s]+)(?#\\s+|$)");
 static QRegularExpression regex_threshold_date("(?:\\s+)(t:" + DATE_PAT + ")(?#\\s+|$)");
 static QRegularExpression regex_threshold_date_r("(?:\\s+)(t:" + RDATE_PAT + ")(?#\\s+|$)");
 
@@ -94,7 +94,8 @@ task::task(QString s, QString context, bool loaded)
 				setPriority(settings.value(SETTINGS_DEFAULT_PRIORITY,DEFAULT_DEFAULT_PRIORITY).toChar());			
 		_raw.remove(regex_tuid);
 	}
-
+	//default active:
+	active=true;
 }
 
 task::task(QString s, QUuid tuid)
@@ -216,7 +217,7 @@ void task::parse(QString s,bool strict)
 
 	_ttag=QDateTime::currentDateTime();
 
-	this->refreshActive(QDateTime::currentDateTime());
+//	this->refreshActive(QDateTime::currentDateTime());
 
 	displayText = _raw;	
 	matches = regex_preamble.globalMatch(_raw);
@@ -245,17 +246,15 @@ void task::parse(QString s,bool strict)
 	while (matcher.hasNext()) {
  	   contexts << matcher.next().captured(1); //we don't care about duplicates...
  	   }
+ 	   
+	matcher = regex_threshold_context.globalMatch(_raw);
+	while (matcher.hasNext()) {
+ 	   thr_contexts << matcher.next().captured(1); //we don't care about duplicates...
+ 	   }
+	
 
 //	qDebug()<<"task::parse "<<toString()<<endline;
 }
-
-bool task::isActive() const
-{
-qDebug()<<"task:isActive() DEPRECATED"<<endline;
-return active;
-}
-
-
 
 void task::setDueDate(QDateTime d)
 /* Update the due_date
@@ -365,12 +364,6 @@ void task::setRaw(QString s)
 	parse(s);
 }
 
-void task::forceActive(bool state)
-/* Force the status of a task to active, until next refresh.*/
-{
-	this->active = state;
-	}
-
 task* task::setComplete(bool c)
 /* Mark the task as completed.
  If there is any rec: pattern,
@@ -383,20 +376,30 @@ task* task::setComplete(bool c)
 	task *ret=nullptr;
 //	_raw.remove(regex_done);
 	if (c){
-		auto matches = regex_rec.globalMatch(_raw);
-		while (matches.hasNext())
-		{
-			QString tmp = matches.next().captured(1);
+		auto match = regex_rec.match(_raw);
+		if (match.hasMatch()){
+			QString tmp = match.captured(1);
 			ret = new task(this);
-			if (settings.value(SETTINGS_DEFAULT_THRESHOLD,DEFAULT_DEFAULT_THRESHOLD) == "t:"){
+			QDateTime new_date;
+			if (this->getThresholdDate()->isValid()){ // t: is valid, and due is not
 				ret->setThresholdDate(task::getRelativeDate(tmp, getThresholdDate()));
 				}
-			else{
+			if (this->getDueDate()->isValid()){ // due: is valid, and t: is not
 				ret->setDueDate(task::getRelativeDate(tmp, getDueDate()));
 				}
+			if (!this->getThresholdDate()->isValid() && !this->getDueDate()->isValid()){			  // nor t: nor due: are valid
+				if (settings.value(SETTINGS_DEFAULT_THRESHOLD,DEFAULT_DEFAULT_THRESHOLD) == "t:"){
+					ret->setThresholdDate(task::getRelativeDate(tmp, nullptr));
+				}
+			else{
+				ret->setDueDate(task::getRelativeDate(tmp, nullptr));
+				}
+					
 			}
+
+		}
     	if(settings.value(SETTINGS_DATES).toBool())
- 				_raw.prepend("x "+QDateTime::currentDateTime().toString("yyyy-MM-dd")+" ");
+ 				_raw.prepend("x "+QDateTime::currentDateTime().toString("yyyy-MM-dd")+" "); //we keep the priority??
  		else
  				_raw.prepend("x ");
  		complete=Qt::Checked;
@@ -483,7 +486,7 @@ qDebug()<<"DEPRECATED task::refreshActive"<<endline;
 ====================================  STATIC FUNCTIONS ========================================
 */
 QDateTime task::getRelativeDate(QString d, const QDateTime* base)
-/* static function, returns a QDateTime object based on the "relative" as described in regex_reldate
+/* static function, returns a QDateTime object based on the "relative" and today as described in regex_reldate
 */
 {
 	QSettings settings;

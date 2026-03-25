@@ -45,9 +45,9 @@ public:
 
 
 signals:
-	public slots:
+	public slots:	
 private:
-	eTaskCriticity taskCriticity(task* t) const;
+//	eTaskCriticity taskCriticity(task* t) const;
 
 };
 

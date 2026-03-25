@@ -123,6 +123,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(findshortcut,SIGNAL(activated()),ui->lineEditFilter,SLOT(setFocus()));
     auto findshortcut2 = new QShortcut(QKeySequence(tr("F3")),this);
     QObject::connect(findshortcut2,SIGNAL(activated()),ui->lineEditFilter,SLOT(setFocus()));
+    auto switchshortcut = new QShortcut(QKeySequence(tr("F6")),this);
+    QObject::connect(switchshortcut,SIGNAL(activated()),this, SLOT(toggleFocus()));
 
 		connect(ui->editAction, SIGNAL(triggered()), this, SLOT(on_actionEdit()));
 		connect(ui->completeAction, SIGNAL(triggered()), this, SLOT(on_actionComplete()));   
@@ -150,7 +152,6 @@ MainWindow::MainWindow(QWidget *parent) :
     	connect(ui->sortDateAction, SIGNAL(triggered()), this, SLOT(on_actionSortDate()));
     	connect(ui->sortInactiveAction, SIGNAL(triggered()), this, SLOT(on_actionSortInactive()));    	
     	connect(ui->todaysViewAction, SIGNAL(triggered()), this, SLOT(on_actionTodaysView()));    	
-//**************************************************************
 
     	connect(ui->respectThresholdAction, SIGNAL(triggered()), this, SLOT(on_actionRespectThreshold()));
    	connect(ui->thresholdDueAction, SIGNAL(triggered()), this, SLOT(on_actionThresholdDue()));
@@ -254,20 +255,50 @@ QSettings settings;
         f.setPointSize(size);
         qApp->setFont(f);
     }
-
    task_set->setFileWatch(settings.value(SETTINGS_AUTOREFRESH).toBool(),(QObject*) this);
+	task_set->recalculate();
+
+	proxyModel->setContexts(task_set->getContexts());
+	ui->respectThresholdAction->setChecked(settings.value(SETTINGS_THRESHOLD_INACTIVE,DEFAULT_THRESHOLD_INACTIVE).toBool());
+	ui->thresholdDueAction->setChecked(settings.value(	SETTINGS_DUE_AS_THRESHOLD,DEFAULT_DUE_AS_THRESHOLD).toBool());
+	ui->showInactiveAction->setChecked(settings.value(	SETTINGS_HIDE_INACTIVE,DEFAULT_HIDE_INACTIVE).toBool());
+
+	
+	todoProxyModel::TodourFilterMode newfval = todoProxyModel::NoFilter;	
+	if (ui->todaysViewAction->isChecked())	newfval |= todoProxyModel::TodaysView;
+	if (ui->respectThresholdAction->isChecked())	newfval |= todoProxyModel::HideThreshold;
+	if (ui->thresholdDueAction->isChecked())	newfval |= todoProxyModel::DueAsThreshold;
+	if (ui->showInactiveAction->isChecked())	newfval |= todoProxyModel::ShowInactive;
+	proxyModel->setFilterMode(newfval);
+
+
+	ui->sortInactiveAction->setChecked(settings.value(SETTINGS_SEPARATE_INACTIVES,DEFAULT_SEPARATE_INACTIVES).toBool());
+	ui->sortAzAction->setChecked(settings.value(SETTINGS_SORT_AZ,DEFAULT_SORT_AZ).toBool());
+	ui->sortDateAction->setChecked(settings.value(SETTINGS_SORT_IDATE,DEFAULT_SORT_IDATE).toBool());
+	ui->split->restoreState(settings.value("splitterSizes").toByteArray());
+	
+	todoProxyModel::TodourSortMode newsval = todoProxyModel::no_sort;	
+	if (ui->sortAzAction->isChecked())	newsval |= todoProxyModel::sort_az;
+	if (ui->sortDateAction->isChecked()) newsval |= todoProxyModel::sort_idate;
+	if (ui->sortInactiveAction->isChecked()) newsval |= todoProxyModel::inactive_last;
+	
+	proxyModel->setSortMode(newsval);
+    model->refresh();
 
 	updateTitle();
+	qDebug()<<"Mainwindow: finished update settings"<<endline;
 	}
 
 
 void MainWindow::dataInModelChanged(QModelIndex i1,QModelIndex i2)
 /* dataInModelChanged informs us that data has changed.
-We need to update the title + ?
+We need to update the title + recalculate the tasks active.
 */
 {
-    Q_UNUSED(i2)
+    Q_UNUSED(i2)// one day, we can limit the computation to some subset...
     Q_UNUSED(i1)
+    
+	task_set->recalculate();
 	this->updateTitle();  
 	}
 
@@ -277,6 +308,14 @@ MainWindow::~MainWindow()
     delete ui;
     delete model;
 	}
+
+void MainWindow::toggleFocus()
+/* */
+{
+	if (!ui->noteView->isVisible()) return;
+	if (!ui->noteView->hasFocus()) ui->noteView->setFocus(Qt::OtherFocusReason);
+	else  ui->tableView->setFocus(Qt::OtherFocusReason);
+}
 
 void MainWindow::updateTitle()
 /*
@@ -298,7 +337,7 @@ void MainWindow::on_tableView_customContextMenuRequested(const QPoint &pos)
 	}
 
 void MainWindow::on_noteView_customContextMenuRequested(const QPoint &pos)
-/*
+/* NOT IMPLEMENTED
 */{
 	Q_UNUSED(pos)
 	}
@@ -342,17 +381,32 @@ void MainWindow::on_lineEditFilter_returnPressed()
 void MainWindow::on_actionSortAZ()
 /* sorts the list A to Z
 */{
+	QSettings settings;
 	ui->sortDateAction->setChecked(false);
 	ui->sortAzAction->setChecked(true);
-	proxyModel->sort_by_az();
+	settings.setValue(SETTINGS_SORT_AZ,true);
+	settings.setValue(SETTINGS_SORT_IDATE,false);
+	
+//	proxyModel->sort_by_az();
+	todoProxyModel::TodourSortMode newval = proxyModel->getSortMode();
+	newval |= todoProxyModel::sort_az;
+	newval &= ~todoProxyModel::sort_idate;
+	proxyModel->setSortMode(newval); 
 }
 
 void MainWindow::on_actionSortDate()
 /* sorts the list by input date DECREASING
 */{
+	QSettings settings;
 	ui->sortAzAction->setChecked(false);
 	ui->sortDateAction->setChecked(true);
-	proxyModel->sort_by_inputdate();
+	settings.setValue(SETTINGS_SORT_AZ,false);
+	settings.setValue(SETTINGS_SORT_IDATE,true);
+	
+	todoProxyModel::TodourSortMode newval = proxyModel->getSortMode();
+	newval |= todoProxyModel::sort_idate;
+	newval &=~todoProxyModel::sort_az;
+	proxyModel->setSortMode(newval);
 }
 
 void MainWindow::on_actionSortInactive()
@@ -360,35 +414,39 @@ void MainWindow::on_actionSortInactive()
 */{
 	QSettings settings;
 	settings.setValue(SETTINGS_SEPARATE_INACTIVES,ui->sortInactiveAction->isChecked());
-	proxyModel->sort_InactiveLast(settings.value(SETTINGS_SEPARATE_INACTIVES,DEFAULT_SEPARATE_INACTIVES).toBool());
+	todoProxyModel::TodourSortMode newval=proxyModel->getSortMode();
+	if (ui->sortInactiveAction->isChecked()) //inactive last true
+		newval |= todoProxyModel::inactive_last;
+	else
+		newval &= ~todoProxyModel::inactive_last;
+	
+	proxyModel->setSortMode(newval);
+
+
+	//proxyModel->sort_InactiveLast(settings.value(SETTINGS_SEPARATE_INACTIVES,DEFAULT_SEPARATE_INACTIVES).toBool());
 }
-
-/*
-enum eTaskCriticity{
-Todour_TodaysView=2,
-Todour_HideThreshold=4,
-Todour_DueAsThreshold=8,
-Todour_ShowInactive=16
-};
-*/
-
 
 void MainWindow::on_actionTodaysView()
 /* Shows the todays View.
 This contains only the active tasks, tasks get a score, we show only the nn first.
 nn can be in options.
 */{
-	proxyModel->updateFilterLevel(Todour_TodaysView);
+	todoProxyModel::TodourFilterMode newval=proxyModel->getFilterMode();
 	if (ui->todaysViewAction->isChecked()){
+//		proxyModel->todaysView(true);
+		newval |= todoProxyModel::TodaysView;
 		ui->respectThresholdAction->setEnabled(false);
    	ui->thresholdDueAction->setEnabled(false);
    	ui->showInactiveAction->setEnabled(false);
 		}
 	else{
+//		proxyModel->todaysView(false);
+		newval &=  ~todoProxyModel::TodaysView;
 		ui->respectThresholdAction->setEnabled(true);
    	ui->thresholdDueAction->setEnabled(true);
    	ui->showInactiveAction->setEnabled(true);
 		}
+	proxyModel->setFilterMode(newval);
 }
 
 void MainWindow::on_actionRespectThreshold()
@@ -399,29 +457,42 @@ void MainWindow::on_actionRespectThreshold()
 */{
 	QSettings settings;
    settings.setValue(SETTINGS_THRESHOLD_INACTIVE,ui->respectThresholdAction->isChecked());
-
-// Here we have to compute the filter value.
+   todoProxyModel::TodourFilterMode newval = proxyModel->getFilterMode(); 
 	if (ui->respectThresholdAction->isChecked())
-		proxyModel->updateFilterLevel(Todour_HideThreshold);
+			newval |= todoProxyModel::HideThreshold;
 	else
-		proxyModel->updateFilterLevel(Todour_NoFilter);
+			newval &= ~todoProxyModel::HideThreshold;
+			
+	proxyModel->setFilterMode(newval);
 }
 
 
 void MainWindow::on_actionThresholdDue()
 /* */{
+	QSettings settings;
+	settings.setValue(SETTINGS_DUE_AS_THRESHOLD, ui->thresholdDueAction->isChecked());
+
+   todoProxyModel::TodourFilterMode newval = proxyModel->getFilterMode(); 
 	if (ui->thresholdDueAction->isChecked())
-		proxyModel->updateFilterLevel(Todour_DueAsThreshold);
+		newval |= todoProxyModel::DueAsThreshold;
 	else
-		proxyModel->updateFilterLevel(Todour_NoFilter);
+		newval &= ~todoProxyModel::DueAsThreshold;
+	proxyModel->setFilterMode(newval);
+
 }
 
 void MainWindow::on_actionShowInactive()
 /* */{
+	QSettings settings;
+	settings.setValue(SETTINGS_HIDE_INACTIVE, ui->showInactiveAction->isChecked());
+
+
+   todoProxyModel::TodourFilterMode newval = proxyModel->getFilterMode(); 
 	if (ui->showInactiveAction->isChecked())
-		proxyModel->updateFilterLevel(Todour_ShowInactive);
+		newval |= todoProxyModel::ShowInactive;
 	else
-		proxyModel->updateFilterLevel(Todour_NoFilter	);
+		newval &= ~todoProxyModel::ShowInactive;
+	proxyModel->setFilterMode(newval);
 }
 
 
@@ -608,6 +679,8 @@ void MainWindow::cleanup()
    settings.setValue( SETTINGS_SAVESTATE, saveState() );
    settings.setValue( SETTINGS_MAXIMIZED, isMaximized() );
    settings.setValue(SETTINGS_SEARCH_STRING,ui->lineEditFilter->text());
+  	settings.setValue("splitterSizes", ui->split->saveState());
+
    if(trayicon!=NULL){
    	delete trayicon;
    	trayicon = NULL;

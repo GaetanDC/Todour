@@ -21,11 +21,11 @@ Author Gaetan DC
 
 
 enum eTaskCriticity{
-Todour_NoFilter=0,
-Todour_TodaysView=2,
-Todour_HideThreshold=4,
-Todour_DueAsThreshold=8,
-Todour_ShowInactive=16
+Todour_NoFiltert=0,
+Todour_TodaysViewt=2,
+Todour_HideThresholdt=4,
+Todour_DueAsThresholdt=8,
+Todour_ShowInactivet=16
 };
 
 
@@ -46,6 +46,7 @@ private:
 	Qt::CheckState complete ;
 	bool active;
 	QStringList contexts;
+	QStringList thr_contexts;
 	
 public:
 	task(QString s="", QString context="", bool loaded=false);
@@ -65,7 +66,6 @@ public:
 	task* setComplete(bool c = true); // manage the rec:...
 	void setRaw(QString s);
 
-	void forceActive(bool state); // BAD CODE!
 	
 	inline QDateTime const *getDueDate() {return &dueD;};
 	inline QDateTime const *getThresholdDate() {return &thrD;};
@@ -78,11 +78,14 @@ public:
 	inline QString getRaw() const {return _raw;};	/* returns the full text, used for edit */
 	inline QString getEditText() const {return _raw;};/* text for edit in Todour*/
 	inline QString getDescription() const {return description;}; 	/* text for display in future tool. return only the descriptive part of the text, without t: due: color: utid: ...   TODO*/
-	bool isActive() const;
 	inline QDateTime getTimeStamp() const {return _ttag;}  //for future sync
 	inline bool operator==(task &t){return t.getTuid()==_tuid;}
 	inline QStringList getContexts(){return contexts;};
 	inline QStringList getThresholdContexts(){return contexts;};
+	inline bool isActive() const {return active;};
+	inline void setActive(bool state){active=state;};
+	
+	
 	void refreshActive(QDateTime now);
 	
 	QString getURL() const;	

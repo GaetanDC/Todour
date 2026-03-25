@@ -26,6 +26,7 @@
 #define DEFAULT_DIRECTORY ""
 #define DEFAULT_INACTIVE "LATER:;WAIT:"
 #define DEFAULT_SEPARATE_INACTIVES true
+#define DEFAULT_HIDE_INACTIVE false
 #define DEFAULT_ACTIVE_COLOR 0xFF000000
 #define DEFAULT_INACTIVE_COLOR 0xFF555555
 #define DEFAULT_DATES false
@@ -49,7 +50,8 @@
 #define DEFAULT_DEFAULT_PRIORITY "B"
 #define DEFAULT_NOTE_ENABLE true
 #define DEFAULT_NN_TODAY 5
-
+#define DEFAULT_SORT_AZ true
+#define DEFAULT_SORT_IDATE false
 
 // Names of settings in QSettings
 #define SETTINGS_DUE "due"
@@ -75,6 +77,7 @@
 #define SETTINGS_DIRECTORY "directory"
 #define SETTINGS_INACTIVE "inactive"
 #define SETTINGS_SEPARATE_INACTIVES "separateinactive"
+#define SETTINGS_HIDE_INACTIVE "hideinactive"
 #define SETTINGS_ACTIVE_COLOR "activecolor"
 #define SETTINGS_INACTIVE_COLOR "inactivecolor"
 #define SETTINGS_ACTIVE_FONT "activefont"
@@ -95,11 +98,16 @@
 #define SETTINGS_DEFAULT_PRIORITY "default_priority"
 #define SETTINGS_NOTE_ENABLE "note_enable"
 #define SETTINGS_NN_TODAY "nn_today"
+#define SETTINGS_SORT_AZ "sort_az"
+#define SETTINGS_SORT_IDATE "sort_idate"
+
+
 
 #define SETTINGS_BACKEND "backend"
 #define SETTINGS_CALDAV_URL "caldav_url"
 #define SETTINGS_CALDAV_USERNAME "caldav_username"
 #define SETTINGS_CALDAV_PASSWORD "caldav_password"
+
 
 enum prio_on_close {removeit=0,moveit,tagit};
 

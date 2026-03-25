@@ -57,10 +57,13 @@ signals:
 public slots:
     void backendDataLoaded();
     void toggleDone(int tuid);
+    void recalculate();
 private:
 	QUndoStack* _undo;
 	QStringList contexts;
 };
+
+
 
 #include "notetxt.h"
 

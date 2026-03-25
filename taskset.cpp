@@ -213,6 +213,23 @@ void taskset::reloadContexts()
 }
 
 
+void taskset::recalculate()
+/* Data of display has been modified, refresh the internal data:
+- through all tasks, 
+*/{
+	QSettings settings;
+	QStringList words = settings.value(SETTINGS_INACTIVE,DEFAULT_INACTIVE).toString().split(';');
+	for(vector<task*>::const_iterator iter=content.begin();iter!=content.end();++iter){
+		(*iter)->setActive(true);
+		for (QString i:words){
+			if ((*iter)->getRaw().contains(i)){
+				(*iter)->setActive(false);
+				break;
+			}
+		}
+	}
+
+}
 
 
 //*************************************************************************************************************************

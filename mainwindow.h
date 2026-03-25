@@ -51,7 +51,7 @@ private slots:
     inline void on_actionManual_triggered()
     		{QDesktopServices::openUrl(QUrl("https://sverrirvalgeirsson.github.io/Todour"));};    
     inline void on_actionQuit_triggered(){cleanup();}
-
+	 void toggleFocus();
 
     void on_addButton_clicked();
     void on_archiveButton_clicked();

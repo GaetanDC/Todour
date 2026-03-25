@@ -201,57 +201,64 @@ border-radius: 5px;
       </item>
      </layout>
     </item>
+    
+    
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <layout class="QVBoxLayout" name="vertLayout">
       <item>
-       <widget class="QTableView" name="tableView">
-        <property name="contextMenuPolicy">
-         <enum>Qt::CustomContextMenu</enum>
-        </property>
-        <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarAsNeeded</enum>
-        </property>
-        <property name="autoScroll">
-         <bool>true</bool>
-        </property>
-        <property name="alternatingRowColors">
-         <bool>false</bool>
-        </property>
-        <property name="textElideMode">
-         <enum>Qt::ElideRight</enum>
-        </property>
-        <property name="sortingEnabled">
-         <bool>false</bool>
-        </property>
-        <property name="wordWrap">
-         <bool>false</bool>
-        </property>
-        <attribute name="verticalHeaderVisible">
-         <bool>false</bool>
-        </attribute>
-        <attribute name="verticalHeaderHighlightSections">
-         <bool>false</bool>
-        </attribute>
-       </widget>
-      </item>
-     </layout>
-    </item>
+     	 <widget class="QSplitter" name="split">
+     	 	<property name="orientation">
+     	 		<enum>Qt::Vertical</enum>
+     	 		</property>
+	     	 <layout class="QHBoxLayout" name="hlayout1">
+     	 		<item>
+     	  			<widget class="QTableView" name="tableView">
+     	   			<property name="contextMenuPolicy">
+     	    			<enum>Qt::CustomContextMenu</enum>
+     	   			</property>
+     	   			<property name="horizontalScrollBarPolicy">
+     	    			<enum>Qt::ScrollBarAsNeeded</enum>
+     	   			</property>
+     	   			<property name="autoScroll">
+     	    			<bool>true</bool>
+     	   			</property>
+     	   			<property name="alternatingRowColors">
+     	    			<bool>false</bool>
+     	   			</property>
+     	   			<property name="textElideMode">
+     	    			<enum>Qt::ElideRight</enum>
+     	   			</property>
+     	   			<property name="sortingEnabled">
+     	    			<bool>false</bool>
+     	   			</property>
+     	   			<property name="wordWrap">
+     	    			<bool>false</bool>
+     	   			</property>
+     	   			<attribute name="verticalHeaderVisible">
+     	    			<bool>false</bool>
+     	   			</attribute>
+     	   			<attribute name="verticalHeaderHighlightSections">
+     	    			<bool>false</bool>
+     	   			</attribute>
+     	  			</widget>
+     		 	</item>
+ 		      <item>
+  			     <widget class="QTextEdit" name="noteView">
+        			<property name="contextMenuPolicy">
+         			<enum>Qt::CustomContextMenu</enum>
+        			</property>
+        			<property name="horizontalScrollBarPolicy">
+         			<enum>Qt::ScrollBarAlwaysOff</enum>
+        			</property>
+        			<property name="wordWrapMode">
+         			<enum>QTextOption::WordWrap</enum>
+        			</property>
+       		  </widget>
+				</item>
+    		</layout>
+   	 </widget>
+   	 </item>
 
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <widget class="QTextEdit" name="noteView">
-        <property name="contextMenuPolicy">
-         <enum>Qt::CustomContextMenu</enum>
-        </property>
-        <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarAlwaysOff</enum>
-        </property>
-        <property name="wordWrapMode">
-         <enum>QTextOption::WordWrap</enum>
-        </property>
-       </widget>
-      </item>
      </layout>
     </item>
 
