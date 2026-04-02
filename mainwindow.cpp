@@ -649,8 +649,9 @@ void MainWindow::on_archiveButton_clicked()
 */{
 //TODO: refresh the view
 
-	task_set->archive();
-    _undoStack->clear(); //no undo possible anymore.	
+ 	 task_set->archive();
+    _undoStack->clear(); //no undo possible anymore.
+    model->refresh();
     updateTitle();
 }
 
