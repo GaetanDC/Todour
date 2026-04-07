@@ -113,4 +113,20 @@ private:
 
 };
 
+class ProgressCommand : public QUndoCommand
+{
+public:
+	explicit ProgressCommand(task* t, int pcvalue, QUndoCommand *parent = nullptr);
+	~ProgressCommand();
+	void undo() override;
+   void redo() override;
+	int id() const;
+	bool mergeWith(const QUndoCommand *other);
+	
+private:
+	int previousValue;
+	int newValue;
+	task* _task;
+};
+
 #endif // TODOUNDO_H

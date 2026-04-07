@@ -111,14 +111,31 @@ void taskset::recalculate()
 /* Data of display has been modified, refresh the internal data:
 - through all tasks, 
 */{
+	QSettings settings;
+	inactiveFlags = settings.value(SETTINGS_INACTIVE,DEFAULT_INACTIVE).toString().split(";");
 	for (vector<task*>::iterator itask=content.begin();itask!=content.end();++itask){
 		for(QString s:(*itask)->getContexts()){
 			if (! contexts.contains(s))
 					contexts<<s;
-			}
+		}
+
+			//check all tasks for inactive keywords
+		recalculateTask(*itask);
 	}
 	
 	qDebug()<<"taskset::recalculate: "<<contexts<<endline;
+}
+
+void taskset::recalculateTask(task* wip)
+/*
+*/{
+		wip->setActive(true);
+		for (QString i:inactiveFlags){
+			if (wip->getDisplayText().contains(i)){
+				wip->setActive(false);
+				break;
+				}
+			}
 
 }
 

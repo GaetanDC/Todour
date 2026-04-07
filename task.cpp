@@ -33,6 +33,7 @@ static QRegularExpression regex_todo_line("((^(?:x )+("+DATE_PAT+"(?:\\s+|$))?)+
 
 static QRegularExpression regex_context("(?:\\s+)((\\@[^\\s]+)|(\\+[^\\s]+))(?#\\s+|$)");
 
+static QRegularExpression regex_progress("(?:\\s+\\#(?<p>\\d\\d)\\%)(?#\\s+|$)");
 
 
 
@@ -204,6 +205,11 @@ void task::parse(QString s,bool strict)
 			inputD=QDateTime();
 	}
 
+	matches = regex_progress.globalMatch(_raw);
+	if (matches.hasNext()){
+		auto nnn=matches.next();
+		progress = nnn.captured("p").toInt();
+	}
 
 	
 	QString c;
@@ -325,6 +331,17 @@ If a date is present, remove it first !*/
 //	this->updateDescription();
 //	this->updateContexts();
 	_ttag=QDateTime::currentDateTime();
+}
+
+void task::setProgress(int _prog)
+/*
+*/{
+	progress = _prog;
+	_raw.remove(regex_progress);
+	_raw.append(" #");
+	_raw.append(QString::number(_prog));
+	_raw.append("%");
+	this->updateDisplayText();
 }
 
 void task::setColor(QString c)

@@ -223,3 +223,43 @@ PostponeCommand::~PostponeCommand()
 /* #TODO  check*/
 {}
 
+// §§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§
+
+ProgressCommand::ProgressCommand(task* t, int pcvalue, QUndoCommand *parent)
+:QUndoCommand(parent), _task(t)
+/*
+*/{
+	previousValue = _task->getProgress();
+	newValue=min(99,previousValue+pcvalue);
+}
+
+ProgressCommand::~ProgressCommand()
+/*
+*/{
+
+}
+void ProgressCommand::undo()
+/*
+*/{
+	_task->setProgress(previousValue);
+}
+void ProgressCommand::redo()
+/*
+*/{
+	_task->setProgress(newValue);
+
+}
+int ProgressCommand::id() const
+/*
+*/{
+	return 1;
+}
+bool ProgressCommand::mergeWith(const QUndoCommand *other)
+/*
+*/{
+	Q_UNUSED(other)
+}
+
+
+
+

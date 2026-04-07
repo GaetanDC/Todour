@@ -388,6 +388,7 @@ border-radius: 5px;
     <addaction name="deleteAction"/>
     <addaction name="postponeAction"/>
     <addaction name="duplicateAction"/>
+    <addaction name="progressAction"/>
     <addaction name="priorityMenu"/>
 
  	 <widget class="QMenu" name="priorityMenu">
@@ -500,6 +501,12 @@ border-radius: 5px;
    <string>Duplicate</string>
   </property>
  </action>
+ <action name="progressAction">
+  <property name="text">
+   <string>Progress +20%</string>
+  </property>
+ </action>
+
  <action name="ApriorAction">
   <property name="text">
    <string>(A) priority</string>

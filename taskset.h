@@ -22,6 +22,9 @@ public:
    explicit taskset(QObject *parent = 0);
    ~taskset();
 	inline task* at(int position) const {return content.at(position);};
+	void recalculateTask(task* wip);
+
+
 
 //for todoundo
    void addTask(task* t);
@@ -49,8 +52,10 @@ public slots:
     void backendDataLoaded();
     void toggleDone(int tuid);
     void recalculate();
+    
 private:
 	QStringList contexts;
+	QStringList inactiveFlags;
 };
 
 

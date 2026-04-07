@@ -47,6 +47,7 @@ private:
 	bool active;
 	QStringList contexts;
 	QStringList thr_contexts;
+	int progress;
 	
 public:
 	task(QString s="", QString context="", bool loaded=false);
@@ -65,6 +66,7 @@ public:
 	void setPriority(QChar c);
 	task* setComplete(bool c = true); // manage the rec:...
 	void setRaw(QString s);
+	void setProgress(int);
 
 	
 	inline QDateTime const *getDueDate() {return &dueD;};
@@ -84,6 +86,8 @@ public:
 	inline QStringList getThresholdContexts(){return contexts;};
 	inline bool isActive() const {return active;};
 	inline void setActive(bool state){active=state;};
+	inline int getProgress() const {return progress;};
+	
 	
 	QString getURL() const;	
 	

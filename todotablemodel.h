@@ -36,7 +36,7 @@ public:
     void safePostpone(const QModelIndex & index, QString txt);
     void safePriority(const QModelIndex & index, QChar prio);
 	 void safeToggleComplete(const QModelIndex & index);
-
+	 void safeProgress(const QModelIndex & index);
 //	 void flush();
 //	 void archive();
 //  void setFileWatch(bool b, QObject *parent);

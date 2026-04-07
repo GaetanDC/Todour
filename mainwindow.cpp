@@ -874,6 +874,21 @@ void MainWindow::on_actionSync_triggered()
 {qDebug()<<"Sync not implemented"<<endline;
 }
 
+void MainWindow::on_progressAction_triggered()
+/*
+*/{
+	QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
+   if(!indexes.empty()){
+	model->startModelChange("progress");
+	   for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
+			model->safeProgress(*i);
+			}
+		model->endModelChange();		
+	   updateTitle();
+	   }
+
+}
+
 
 void MainWindow::handleNoteUpdate(QString txt)
 /*
@@ -881,3 +896,6 @@ void MainWindow::handleNoteUpdate(QString txt)
 */{
 	ui->noteView->setPlainText(txt);
 }
+
+
+

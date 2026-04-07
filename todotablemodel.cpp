@@ -155,21 +155,19 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
 bool TodoTableModel::setData(const QModelIndex & index, const QVariant & value, int role)
 /* 
 */{
-//	QAbstractItemModel::beginResetModel();
+	this->beginResetModel();
 
-   if(index.column()==0 && role == Qt::CheckStateRole){
-  	 	this->safeComplete(index,value.toBool());  
-	   emit dataChanged(index,index.siblingAtColumn(1)	);
-		}
-   else if(index.column()==1 && role == Qt::EditRole){
-		this->safeEdit(index,value.toString());
-	   emit dataChanged(index,index		);
-		}
-   else return false;
+   if(index.column()==0 && role == Qt::CheckStateRole)
+  	 		this->safeComplete(index,value.toBool());  
+   else{ if(index.column()==1 && role == Qt::EditRole)
+			{this->safeEdit(index,value.toString());}
+   	else return false;
+   	}
 
-   emit dataChanged(index,index.siblingAtColumn(2)	);
-//   QAbstractItemModel::endResetModel();
-  	return true;
+	tasklist->recalculate();
+	this->endResetModel();
+
+   return true;
 }
 
 void TodoTableModel::startModelChange(QString desc)
@@ -233,6 +231,12 @@ void TodoTableModel::safeToggleComplete(const QModelIndex & index)
 */{
 	undoS->push(new CompleteCommand(tasklist, tasklist->at(index.row()), !tasklist->at(index.row())->isComplete()));
 	}
+	
+void TodoTableModel::safeProgress(const QModelIndex & index)
+/* Safely add 20% progress
+*/{
+	undoS->push(new ProgressCommand(tasklist->at(index.row()), 20));
+	}
 
 void TodoTableModel::refresh()
 /*// what is exactly the scope of this?
@@ -254,8 +258,8 @@ void TodoTableModel::refresh()
 //    QAbstractItemModel::beginResetModel();
 //    QAbstractItemModel::endResetModel();
 
-
-    emit dataChanged(createIndex(0, 0),createIndex(999, 1));
+	tasklist->recalculate();
+   emit dataChanged(createIndex(0, 0),createIndex(999, 1));
 
 //    QAbstractItemModel::endResetModel();
 }
