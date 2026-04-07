@@ -3,10 +3,9 @@
 #include <QDebug>
 
 AddCommand::AddCommand(taskset* _list, task* _t, QUndoCommand *parent)
-    : QUndoCommand(parent), tasklist(_list)
+    : QUndoCommand(parent),  _task(_t),tasklist(_list)
 /* */
 {
-	_task = _t;
 	setText("New task");
 }
 
@@ -39,7 +38,7 @@ return false;}
 // §§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§
 
 DeleteCommand::DeleteCommand(taskset* _list, QUuid index, QUndoCommand *parent)
-    : QUndoCommand(parent), tasklist(_list), _tuid(index)
+    : QUndoCommand(parent),  tasklist(_list),_tuid(index) 
 /*	_task = is initialised in the redo */
 {
 	setText("Delete");

@@ -43,7 +43,7 @@ void todotxt::reloadRequest()
     _TodoFile->open(QIODevice::ReadOnly | QIODevice::Text);
 
     if (!_TodoFile->isOpen()){
-    	qDebug()<<"todotxt::reloadRequest error opening file"<<endline;
+		emit ReadError("Todorxt: unable to open file");
     	return;
     }
 	emit DataAvailable();
@@ -85,7 +85,6 @@ return 2 : wrong "filetype", did nothing
 return 0 : sucess.
 */
 {
-    qDebug()<<"todotxt::writeB("<<t<<"). append="<<append<<endline;
     QTextStream out;
 	bool result;
 	switch (t){
@@ -125,7 +124,7 @@ return 0 : sucess.
     out.setEncoding(QStringConverter::Utf8);
     for(vector<task*>::iterator i=content.begin(); i!=content.end(); i++)
         {
-        qDebug()<<"Writing: "<<(*i)->toSaveString()<<endline;
+//        qDebug()<<"Writing: "<<(*i)->toSaveString()<<endline;
          out << (*i)->toSaveString() << "\n";
          }
 
@@ -150,43 +149,17 @@ void todotxt::setMonitoring(bool b, QObject *parent)
 {
 	Q_UNUSED(parent);
 	if (b) {
-		qDebug()<<"Filesystemwtcher activated"<<endline;
     	watcher = new QFileSystemWatcher();
     	watcher->removePaths(watcher->files()); // Make sure this is empty. Should only be this file we're using in this program, and only one instance
     	watcher->addPath(_TodoFilePath);
     	QObject::connect(watcher, SIGNAL(fileChanged(QString)), this, SIGNAL(DataChanged()));
+    	emit FileSystemWatcherStatus(true);
 		}
 	else {
  	   if(watcher != NULL){
-        delete watcher;
-        watcher = NULL;
+      	delete watcher;
+      	watcher = NULL;
+			emit FileSystemWatcherStatus(false);
 	}
 }
 }
-
-// #TODO  delete this?
-// re-use the code of "REMOVE_DOUBLETS"
-void todotxt::slurp(QFile* file,vector<QString>& content){ //  NOT USED.
-qDebug()<<" use of deprecated todotxt::slurp"<<endline;
-    QSettings settings;
-    if (!file->open(QIODevice::ReadOnly | QIODevice::Text))
-        return;
-
-    QTextStream in(file);
-    in.setEncoding(QStringConverter::Utf8);
-    while (!in.atEnd()) {
-        QString line = in.readLine();
-        if(settings.value(SETTINGS_REMOVE_DOUBLETS,DEFAULT_REMOVE_DOUBLETS).toBool()){
-            // This can be optimized by for example using a set<QString>
-            if(std::find(content.begin(),content.end(),line) != content.end()){
-                // We found this line. So we ignore it
-                continue;
-            }
-        }
-        content.push_back(line);
-     }
-	if (file->isOpen()){
-    	file->close();	
-	}
-}
-

@@ -11,7 +11,7 @@ void testTasks();
 int main(int argc, char *argv[])
 {
 	qDebug()<<"Hello, debug mode."<<endline;
-//	testTasks();
+//	testTasks(); return -1;
 
  	
     QApplication appl(argc, argv);

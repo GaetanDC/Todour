@@ -8,14 +8,12 @@
 #include <vector>
 #include "taskset.h"
 
-#define TODOUR_INACTIVE "TODOUR_INACTIVE_794e26fdf5ea"
-
 class TodoTableModel : public QAbstractTableModel{
     Q_OBJECT
 protected:
 	taskset* tasklist;
 public:
-    explicit TodoTableModel(taskset* _tasklist, QObject *parent = 0);
+    explicit TodoTableModel(taskset* _tasklist,QUndoStack* _undo, QObject *parent = 0);
     ~TodoTableModel();
     int rowCount(const QModelIndex &parent) const;
     int columnCount(const QModelIndex &parent) const;
@@ -31,23 +29,26 @@ public:
 	QString toString();
 
 
-/* FUNCTIONS TO CONSIDER DROPPING HERE
-	 void safeComplete(int position, bool state);
-	 void safeEdit(int position, QString _raw);
+	 void safeComplete(const QModelIndex & index, bool state);
+	 void safeEdit(const QModelIndex & index, QString _raw);
     void safeAdd(task* _t);
     void safeDelete(QUuid index);
-    void safePostpone(int position, QString txt);
-    void safePriority(int position, QChar prio);
-	 void flush();
-	 void archive();
-    void setFileWatch(bool b, QObject *parent);
-	 */
+    void safePostpone(const QModelIndex & index, QString txt);
+    void safePriority(const QModelIndex & index, QChar prio);
+	 void safeToggleComplete(const QModelIndex & index);
 
+//	 void flush();
+//	 void archive();
+//  void setFileWatch(bool b, QObject *parent);
+
+
+	void startModelChange(QString desc);
+	void endModelChange();
 
 signals:
-	public slots:	
+public slots:	
 private:
-//	eTaskCriticity taskCriticity(task* t) const;
+	QUndoStack* undoS;
 
 };
 

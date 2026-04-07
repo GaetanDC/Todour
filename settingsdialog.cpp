@@ -116,6 +116,8 @@ void SettingsDialog::on_buttonBox_accepted()
         	settings.setValue(SETTINGS_SEARCH_NOT_CHAR,ui->search_not_char->text().at(0));
     if(ui->default_priority->text().size()>0)
 			settings.setValue(SETTINGS_DEFAULT_PRIORITY,ui->default_priority->text().at(0));
+		else
+			settings.setValue(SETTINGS_DEFAULT_PRIORITY,"");
 
     // Handle business days
     QList<int> business_days;

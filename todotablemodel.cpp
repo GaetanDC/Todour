@@ -6,10 +6,10 @@
 #include <QDebug>
 #include <vector>
 
-//#include "todo_undo.h"
+#include "todo_undo.h"
 
-TodoTableModel::TodoTableModel(taskset* _tasklist, QObject *parent) :
-    QAbstractTableModel(parent), tasklist(_tasklist)
+TodoTableModel::TodoTableModel(taskset* _tasklist, QUndoStack* _undo, QObject *parent) :
+    QAbstractTableModel(parent), tasklist(_tasklist), undoS(_undo)
 {}
 
 TodoTableModel::~TodoTableModel(){}
@@ -142,7 +142,11 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
 	if(role == Qt::UserRole+4){  //UserRole+4 returns duedate
 		return QVariant(*(tasklist->at(index.row())->getDueDate()));
 	}
-        
+
+	if(role == Qt::UserRole+5){  //UserRole+5 returns thresholdContexts
+		return QVariant(tasklist->at(index.row())->getThresholdContexts());
+	}
+	
    
 	return QVariant();
 }
@@ -151,18 +155,84 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
 bool TodoTableModel::setData(const QModelIndex & index, const QVariant & value, int role)
 /* 
 */{
-	QAbstractItemModel::beginResetModel();
+//	QAbstractItemModel::beginResetModel();
 
-    if(index.column()==0 && role == Qt::CheckStateRole)
-  	 	tasklist->safeComplete(index.row(),value.toBool());  
-    else if(index.column()==1 && role == Qt::EditRole)
-		tasklist->safeEdit(index.row(),value.toString());
-    else return false;
-    QAbstractItemModel::endResetModel();
+   if(index.column()==0 && role == Qt::CheckStateRole){
+  	 	this->safeComplete(index,value.toBool());  
+	   emit dataChanged(index,index.siblingAtColumn(1)	);
+		}
+   else if(index.column()==1 && role == Qt::EditRole){
+		this->safeEdit(index,value.toString());
+	   emit dataChanged(index,index		);
+		}
+   else return false;
+
+   emit dataChanged(index,index.siblingAtColumn(2)	);
+//   QAbstractItemModel::endResetModel();
   	return true;
 }
 
+void TodoTableModel::startModelChange(QString desc)
+/*
+*/{
+	undoS->beginMacro(desc);
+	this->beginResetModel();
 
+}
+
+void TodoTableModel::endModelChange()
+/*
+*/{
+
+	this->endResetModel();
+	undoS->endMacro(); 
+
+}
+
+////%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//Safe commands generate the action through the _undo stack
+
+void TodoTableModel::safeComplete(const QModelIndex & index, bool state)
+/* Safely complete the tasks at position, creating an undo command
+*/{
+	undoS->push(new CompleteCommand(tasklist, tasklist->at(index.row()), state));
+	}
+	
+void TodoTableModel::safeEdit(const QModelIndex & index, QString _raw)
+/* Safely edit the task at position, creating an undo command
+*/{
+	undoS->push(new EditCommand(tasklist, tasklist->at(index.row()),_raw));
+	}
+	
+void TodoTableModel::safeAdd(task* _t)
+/* Safely add a task, creating an undo command
+*/{
+	undoS->push(new AddCommand(tasklist,_t));
+  	}
+      	 
+void TodoTableModel::safeDelete(QUuid index)
+/* Safely delete a task, creating an undo command
+*/{
+	undoS->push(new DeleteCommand(tasklist,index));
+	}
+
+void TodoTableModel::safePostpone(const QModelIndex & index, QString txt)
+/* Safely postpone a task, creating an undo command
+*/{
+	undoS->push(new PostponeCommand(tasklist, tasklist->at(index.row()), txt));
+	}
+
+void TodoTableModel::safePriority(const QModelIndex & index, QChar prio)
+/* Safely change priority of a task, creating an undo command
+*/{ 
+	undoS->push(new PriorityCommand(tasklist,tasklist->at(index.row()), prio));
+	}
+	
+void TodoTableModel::safeToggleComplete(const QModelIndex & index)
+/* Safely toggle the complete state
+*/{
+	undoS->push(new CompleteCommand(tasklist, tasklist->at(index.row()), !tasklist->at(index.row())->isComplete()));
+	}
 
 void TodoTableModel::refresh()
 /*// what is exactly the scope of this?
@@ -181,11 +251,11 @@ void TodoTableModel::refresh()
 //    todo->refresh();
 //    todo_data.clear();
 
-    QAbstractItemModel::beginResetModel();
-    QAbstractItemModel::endResetModel();
+//    QAbstractItemModel::beginResetModel();
+//    QAbstractItemModel::endResetModel();
 
 
-    emit dataChanged(QModelIndex(),QModelIndex());
+    emit dataChanged(createIndex(0, 0),createIndex(999, 1));
 
 //    QAbstractItemModel::endResetModel();
 }
@@ -195,69 +265,3 @@ QString TodoTableModel::toString()
 */{
 	return QString("model : ")+"\n"+QString("  Contains n tasks: ")+QString::number((int)tasklist->size());
 }
-
-
-//eTaskCriticity TodoTableModel::taskCriticity(task* t) const
-/*returns task criticity
-- the "show inactive" selection (passed to here)
-- the threshold dates
-- the threshold contexts
-- the "treat due as threshold" ?
-- the "today's view". We should be getting a score from (??) 
-
-Todour_NoFilter=0,  active=true
-Todour_TodaysView=2,
-Todour_HideThreshold=4,
-Todour_DueAsThreshold=8,
-Todour_ShowInactive=16  active=false
-
-
-LEVEL 1 : task with inactive keyword  (2)
-LEVEL 2 : task with threshold in future  (4)
-LEVEL 3 : task with threshold context		(8)
-LEVEL 4 : task with due-reminder in the past	(16)
-LEVEL 5 : task with A-priority, old input date	(32)
-
-*/
-/*{
-	QSettings settings;
-//	qDebug()<<"taskCriticity step 1"<<endline;
-	QStringList words = settings.value(SETTINGS_INACTIVE,DEFAULT_INACTIVE).toString().split(';');
-	for (QString i:words){
-		if (t->getRaw().contains(i)){
-//		qDebug()<<"taskCriticity step 1.1"<<endline;
-			return Todour_ShowInactive;
-			break;
-			}
-		}
-// qDebug()<<"taskCriticity step 2"<<endline;
-	if (*(t->getThresholdDate()) > QDateTime::currentDateTime()){
-		return Todour_HideThreshold;
-	}
-	
-	
-	
-//	qDebug()<<"taskCriticity step 3"<<endline;
-	if (t->getDueDate()->addDays(- settings.value(SETTINGS_DUE_WARNING,DEFAULT_DUE_WARNING).toInt()) < QDateTime::currentDateTime()){
-		return Todour_DueAsThreshold;
-	}
-// qDebug()<<"taskCriticity step 4"<<endline;
-	return Todour_NoFilter;
-
-}
-/*	QSettings settings;
-	bool ret=true;
-	
-	ret &= (QDateTime::currentDateTime() >= *(t->getThresholdDate()));
-	if (!ret) return ret;
-	
-	QStringList words = settings.value(SETTINGS_INACTIVE,DEFAULT_INACTIVE).toString().split(';');
-	for (QString i:words){
-		ret &= ! t->getRaw().contains(i);
-		if (!ret) return ret;
-		}
-	// control context threshold?
-	// control due if DUE_AS_THRESHOLD
-	
-	return ret;
-	*/

@@ -175,8 +175,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     // Started. Lets open the todo.txt file, parse it and show it.
-   task_set = new taskset(_undoStack,this);
-   model = new TodoTableModel(task_set,this);
+   task_set = new taskset(this);
+   model = new TodoTableModel(task_set,_undoStack, this);
  
    proxyModel = new todoProxyModel(this);
    proxyModel->setSourceModel(model);
@@ -184,7 +184,7 @@ MainWindow::MainWindow(QWidget *parent) :
    ui->tableView->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
    ui->tableView->resizeColumnToContents(0); // Checkboxes kept small
 
-	note_set = new noteset(_undoStack, this);
+	note_set = new noteset(this);
 	connect(note_set,SIGNAL(updateText(QString)),this,SLOT(handleNoteUpdate(QString)));
 	note_set->reLoad();	
 //	connect(ui->noteView, SIGNAL(textChanged()),this,SLOT(noteTextChanged()));
@@ -613,9 +613,13 @@ void MainWindow::on_addButton_clicked()
 	QString context = "";
     if(ui->context_lock->isChecked()){
         // The line should have the context of the search field except any negative search
+        QSettings settings;
+        QChar not_char=QChar::Null;
+        QString sett = settings.value(SETTINGS_SEARCH_NOT_CHAR,DEFAULT_SEARCH_NOT_CHAR).toString();
+        if (sett.size()>0) sett.at(0);
         QStringList contexts = ui->lineEditFilter->text().split(QRegularExpression("\\s"));
         for(QString c:contexts){
-         if(c.length()>0 && c.at(0)=='!') continue; // ignore this one
+         if(c.length()>0 && c.at(0)==not_char) continue; // ignore this one
          if(!context.contains(c,Qt::CaseInsensitive)){
              context.append(" "+c);
          }
@@ -638,9 +642,9 @@ void MainWindow::addTodo(QString &s, QString cont)
 /* 
 */{
 	task* t = new task(s,cont);
-	task_set->safeAdd(t);
-
-	model->refresh();
+	model->startModelChange("add");
+	model->safeAdd(t);
+	model->endModelChange();
    updateTitle();
 }
 
@@ -648,10 +652,10 @@ void MainWindow::on_archiveButton_clicked()
 /* // Archive action.
 */{
 //TODO: refresh the view
-
+	 model->startModelChange("archive");
  	 task_set->archive();
+ 	 model->endModelChange();
     _undoStack->clear(); //no undo possible anymore.
-    model->refresh();
     updateTitle();
 }
 
@@ -735,12 +739,12 @@ void MainWindow::on_actionRedo()
 
 void MainWindow::on_actionSpace()
 /*  */{
-   QModelIndex index = ui->tableView->selectionModel()->currentIndex();
-   if(index.isValid())
-	   	task_set->safeToggleComplete((proxyModel->mapToSource(index)).row());
-  	model->refresh();
+   QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
+	for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
+   	if(i->isValid())
+	   	model->safeToggleComplete(*i);
 	updateTitle();
-   
+   }
 }
 
 void MainWindow::on_actionEdit()
@@ -754,14 +758,12 @@ void MainWindow::on_actionEdit()
 void MainWindow::on_actionComplete()
 /* user clicked "Complete" on a set of tasks. 
 */{
-	_undoStack->beginMacro("completion");
-   QModelIndexList indexes = ui->tableView->selectionModel()->selection().indexes();
+	model->startModelChange("completion");
+   QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
 	for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-		task_set->safeComplete((proxyModel->mapToSource(*i)).row(),true);
+		model->safeComplete(*i,true);
 		}
-		
-	_undoStack->endMacro(); 
-	model->refresh();
+	model->endModelChange();		
    updateTitle();
 }
 
@@ -775,13 +777,12 @@ void MainWindow::on_actionDelete()
 		    tuidL.push_back(model->getTask(*i)->getTuid());
 		}
 
-		_undoStack->beginMacro("deletion");			
+	model->startModelChange("deletion");
 		for (QList<QUuid>::iterator j=tuidL.begin();j!=tuidL.end();++j){
-			task_set->safeDelete(*j);
+			model->safeDelete(*j);
 		}
 		
-		_undoStack->endMacro();    
-		model->refresh();
+	model->endModelChange();		
     	updateTitle();
     }
 }
@@ -792,12 +793,11 @@ void MainWindow::on_actionPostpone()
 */{
     QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
     if(!indexes.empty()){
- 		_undoStack->beginMacro("postpone");			   
+	model->startModelChange("postpone");
 		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-			task_set->safePostpone(i->row(),"t:+10d");
+			model->safePostpone(*i,"t:+10d");
 		}
-		_undoStack->endMacro();    
-		model->refresh();
+	model->endModelChange();		
 	    updateTitle();
     }
 }
@@ -807,12 +807,11 @@ void MainWindow::on_actionDuplicate()
 */{
 	QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
 	if (! indexes.isEmpty()){
-		_undoStack->beginMacro("duplicate");
+	model->startModelChange("duplicate");
 		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-			task_set->safeAdd(new task(task_set->at(i->row())));
+			model->safeAdd(new task(task_set->at(i->row())));
 		}
-		_undoStack->endMacro();   
-		model->refresh(); 
+		model->endModelChange();		
 		updateTitle();
 	}
  }
@@ -823,13 +822,12 @@ void MainWindow::on_actionPriority(QChar p)
 */{
    QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
     if(!indexes.empty()){
-   	_undoStack->beginMacro("completion");
+	model->startModelChange("completion");
 	   for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-			task_set->safePriority(i->row(), p);
+			model->safePriority(*i, p);
 			}
-		_undoStack->endMacro();   
-	    model->refresh();
-	    updateTitle();
+		model->endModelChange();		
+	   updateTitle();
 	   }
 }
 

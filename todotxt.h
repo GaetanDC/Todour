@@ -50,7 +50,7 @@ protected:
     vector<QString> done;
  
 private:
-    void slurp(QFile* filename,vector<QString>&  content);
+//    void slurp(QFile* filename,vector<QString>&  content);
     QFileSystemWatcher *watcher;
 
     

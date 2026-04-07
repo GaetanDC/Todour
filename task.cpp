@@ -89,9 +89,11 @@ task::task(QString s, QString context, bool loaded)
 
     	if(!inputD.isValid()&&(settings.value(SETTINGS_DATES).toBool()))
     		 	setInputDate(QDateTime::currentDateTime());
-	
-		if (priority.isNull()) // there was no priority in the newly created task
-				setPriority(settings.value(SETTINGS_DEFAULT_PRIORITY,DEFAULT_DEFAULT_PRIORITY).toChar());			
+		if (priority.isNull()){ // there was no priority in the newly created task
+			QString newp = settings.value(SETTINGS_DEFAULT_PRIORITY,DEFAULT_DEFAULT_PRIORITY).toString();
+//			qDebug()<<"Task constructor newp="<<newp<<endline;
+			if (newp.size()>0) setPriority(newp.at(0));
+			}
 		_raw.remove(regex_tuid);
 	}
 	//default active:
@@ -215,12 +217,21 @@ void task::parse(QString s,bool strict)
 	else
 		color=QColor::fromString("White");
 
+
+	this->updateDisplayText();
+	this->updateDescription();
+	this->updateContexts();
+	
 	_ttag=QDateTime::currentDateTime();
 
-//	this->refreshActive(QDateTime::currentDateTime());
+}
 
+void task::updateDisplayText()
+/* Update the DisplayText based on _raw.
+*/{
+	QSettings settings;
 	displayText = _raw;	
-	matches = regex_preamble.globalMatch(_raw);
+	auto matches = regex_preamble.globalMatch(_raw);
 	if (matches.hasNext())
 	{
 		auto nn=matches.next();
@@ -233,15 +244,21 @@ void task::parse(QString s,bool strict)
 	}
 	displayText.remove(regex_color);
 
+}
+
+void task::updateDescription()
+/* Update the Description based on _raw.
+*/{
 	description = displayText;
-	//description .remove(regex_color);
-	//description .remove(regex_done);
-	description .remove(regex_threshold_date);
-	description .remove(regex_due_date);
-	description .remove(regex_rec); 
+	return; //not used, earn some instructions.
+	description.remove(regex_threshold_date);
+	description.remove(regex_due_date);
+	description.remove(regex_rec); 
+}
 
-
-
+void task::updateContexts()
+/*
+*/{
 	QRegularExpressionMatchIterator matcher = regex_context.globalMatch(_raw);
 	while (matcher.hasNext()) {
  	   contexts << matcher.next().captured(1); //we don't care about duplicates...
@@ -251,9 +268,6 @@ void task::parse(QString s,bool strict)
 	while (matcher.hasNext()) {
  	   thr_contexts << matcher.next().captured(1); //we don't care about duplicates...
  	   }
-	
-
-//	qDebug()<<"task::parse "<<toString()<<endline;
 }
 
 void task::setDueDate(QDateTime d)
@@ -265,8 +279,11 @@ void task::setDueDate(QDateTime d)
 	dueD=d;
 	_raw.remove(regex_due_date);
 	_raw.append(" due:"+d.toString("yyyy-MM-dd"));
-	_ttag=QDateTime::currentDateTime();
 
+	this->updateDisplayText();
+//	this->updateDescription();
+//	this->updateContexts();
+	_ttag=QDateTime::currentDateTime();
 }
 
 void task::setThresholdDate(QDateTime d)
@@ -278,8 +295,11 @@ void task::setThresholdDate(QDateTime d)
 	thrD = d;
 	_raw.remove(regex_threshold_date);
 	_raw.append(" t:"+d.toString("yyyy-MM-dd"));
-	_ttag=QDateTime::currentDateTime();
 
+	this->updateDisplayText();
+	this->updateDescription();
+	this->updateContexts();
+	_ttag=QDateTime::currentDateTime();
 }
 
 void task::setInputDate(QDateTime d)
@@ -300,8 +320,11 @@ If a date is present, remove it first !*/
 	}
 	
 	inputD=d;
-	_ttag=QDateTime::currentDateTime();
 
+	this->updateDisplayText();
+//	this->updateDescription();
+//	this->updateContexts();
+	_ttag=QDateTime::currentDateTime();
 }
 
 void task::setColor(QString c)
@@ -313,20 +336,23 @@ void task::setColor(QString c)
 		c = matches.next().captured(1);
 		if (QColor::isValidColorName(c)){
 			color=QColor::fromString(c);
+			_raw.append(" color:");
+			_raw.append(c);
 		}
 	}
 	else
 		color=QColor::fromString("White");
 
+	this->updateDisplayText();
+//	this->updateDescription();
+//	this->updateContexts();
 	_ttag=QDateTime::currentDateTime();
-
 }
 
 void task::setColor(QColor c)
 {
 	color=c;	
 	_ttag=QDateTime::currentDateTime();
-
 }
 
 void task::setDescription(QString s)
@@ -347,13 +373,16 @@ void task::setPriority(QChar c)
 #BUG: il faut enlever tout ce qui ressemble à une priorité. Si il y en a 2 d'affilée, on enleve les 2.
 */
 {
-	_raw.remove(regex_priority);	
 	if (c.isLetter()){
+		_raw.remove(regex_priority);	
 		_raw.prepend(") ");
 		_raw.prepend(c);
 		_raw.prepend("(");
 		priority=c;
 		_ttag=QDateTime::currentDateTime();
+		this->updateDisplayText();
+		this->updateDescription();
+//		this->updateContexts();
 	}
 }
 
@@ -408,6 +437,9 @@ task* task::setComplete(bool c)
 		_raw.remove(regex_completedate);
 		complete=Qt::Unchecked;
 	}
+	this->updateDisplayText();
+	this->updateDescription();
+//	this->updateContexts();
 	_ttag=QDateTime::currentDateTime();
 
 	return ret;
@@ -457,29 +489,6 @@ QString task::toString() const
 	ret.append("\\n   complete:"+complete);
 	ret.append("\\n   display:"+getDisplayText());
 	return ret;
-}
-
-
-
-void task::refreshActive(QDateTime now)
-/* returns true if the task is active. Active means:
-	- threshold date not greater than today
-	- task not completed
-	- context threshold not activated (!)
-	- not containing "inactive" tags (LATER: IDEA: LOW: WAIT: ..)
-	#TODO: remove from here all the QSettings part, to be done upper, will be fast thanks to new _valid model.
-*/
-{
-qDebug()<<"DEPRECATED task::refreshActive"<<endline;
-	QSettings settings;
-	bool ret=true;
-	ret &= (now >= thrD);
-
-	QStringList words = settings.value(SETTINGS_INACTIVE,DEFAULT_INACTIVE).toString().split(';');
-	for (QString i:words){
-		ret &= ! _raw.contains(i);
-		}
-	this->active = ret;
 }
 
 /*

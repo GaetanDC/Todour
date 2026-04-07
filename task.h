@@ -85,9 +85,6 @@ public:
 	inline bool isActive() const {return active;};
 	inline void setActive(bool state){active=state;};
 	
-	
-	void refreshActive(QDateTime now);
-	
 	QString getURL() const;	
 	
 	QString toSaveString() const;
@@ -105,6 +102,10 @@ public:
 	
 protected:
 	void parse(QString s, bool strict=false);
+	void updateDisplayText();
+	void updateDescription();
+	void updateContexts();
+
 };
 
 #endif // TASK_H

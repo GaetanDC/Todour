@@ -1,16 +1,12 @@
 #include "taskset.h"
 #include "def.h"
-
-#include "todo_undo.h"
-
 #include "todotxt.h"
 //#include "caldav.h"
 
 #include <QMessageBox>
 #include <QRegularExpression>
 
-taskset::taskset(QUndoStack* undo, QObject *parent):
-	_undo(undo)
+taskset::taskset(QObject *parent)
 /* 
 */{
 	Q_UNUSED(parent);
@@ -23,7 +19,7 @@ taskset::taskset(QUndoStack* undo, QObject *parent):
 	if (todo->isReady())
 		todo->reloadRequest();
 
-	reloadContexts();
+	recalculate();
 }
     
 taskset::~taskset()
@@ -31,48 +27,6 @@ taskset::~taskset()
 	delete todo;//REM
 }
 
-////%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-//Safe commands generate the action through the _undo stack
-
-void taskset::safeComplete(int position, bool state)
-/* Safely complete the tasks at position, creating an undo command*/{
-	_undo->push(new CompleteCommand(this, content.at(position), state));
-	}
-	
-void taskset::safeEdit(int position, QString _raw)
-/* Safely edit the task at position, creating an undo command*/{
-	_undo->push(new EditCommand(this, content.at(position),_raw));
-	}
-	
-void taskset::safeAdd(task* _t)
-/* Safely add a task, creating an undo command*/{
-	_undo->push(new AddCommand(this,_t));
-  	}
-      	 
-void taskset::safeDelete(QUuid index)
-/* Safely delete a task, creating an undo command*/{
-	_undo->push(new DeleteCommand(this,index));
-	}
-	
-void taskset::safePostpone(int position, QString txt)
-/* Safely postpone a task, creating an undo command*/{
-	_undo->push(new PostponeCommand(this, content.at(position), txt));
-	}
-
-void taskset::safePriority(int position, QChar prio)
-/* Safely change priority of a task, creating an undo command*/{ 
-	_undo->push(new PriorityCommand(this,content.at(position), prio));
-	}
-	
-void taskset::safeToggleComplete(int position)
-/* Safely toggle the complete state*/
-{
-	_undo->push(new CompleteCommand(this, content.at(position), !content.at(position)->isComplete()));
-	}
-
-
-////%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-//Other commands generate the action directly
 
 void taskset::addTask(task* _t)
 /* 
@@ -96,50 +50,12 @@ task* taskset::removeTask(QUuid tuid)
 	}
 	return nullptr;
 }
-    
-
-task* taskset::getTask(QUuid tuid)
-/* 
-*/{
-	for (vector<task*>::iterator i=content.begin();i!=content.end();++i){
-		if ((*i)->getTuid() == tuid)return *i;
-	}
-	return 0;    
-}
-    
-task* taskset::getTask(int position)
-/* 
-*/{
-	Q_UNUSED(position);
-    return nullptr;
-}
 
 void taskset::flush()
 /*  backend will emit signals, connect done above.
 */{
    todo->writeRequest(content,typeTodo,false); // append=false
 }
-    
-void taskset::refreshActive()
-/* 
-*/{
-qDebug()<<"DEPRECATED taskset::refreshActive()"<<endline;
-    for (unsigned int i=0;i<content.size();i++){
-    	content.at(i)->refreshActive(QDateTime::currentDateTime());
-    	}
-}
-  
-int taskset::size()
-/* 
-*/{
-    return (int)content.size();
-}
-    
-//cycle through all task to recalculate the active state
-    
-//   inline void clearFileWatch(){   todo->clearMonitoring();}; //gaetan 5/1/24
-
-
 
 QString taskset::toString()
 /* 
@@ -151,7 +67,7 @@ void taskset::backendDataLoaded()
 /* 
 */{
   	todo->getAllTask(content);  
-  		qDebug()<<"void taskset::backendDataLoaded() - all tasks loaded"<<endline;
+//  		qDebug()<<"void taskset::backendDataLoaded() - all tasks loaded"<<endline;
 }
 
 void taskset::toggleDone(int position)
@@ -159,13 +75,12 @@ void taskset::toggleDone(int position)
 */{
 Q_UNUSED(position);
 	//TODO: URGENT: update the undo framework for work with taskset and not model.
-//	_undo->push(new CompleteCommand(this, content.at(position)));   
+  
     }
 
 
 void taskset::archive()
 /* Remove all the "finished" tasks and move them to the "done" file.
-#TODO  use UndoCommands ???
 */{
 //	QAbstractItemModel::beginResetModel();
 
@@ -192,16 +107,10 @@ void taskset::setFileWatch(bool b, QObject *parent)
    todo->setMonitoring(b, parent);
 }
 
-
-
-void taskset::reloadContexts()
-/*
+void taskset::recalculate()
+/* Data of display has been modified, refresh the internal data:
+- through all tasks, 
 */{
-// for each tasks in content, find the context (#... or @...)
-// compare found value with the actual list.
-// if not in the list, add it
-//	else skip
-
 	for (vector<task*>::iterator itask=content.begin();itask!=content.end();++itask){
 		for(QString s:(*itask)->getContexts()){
 			if (! contexts.contains(s))
@@ -209,36 +118,17 @@ void taskset::reloadContexts()
 			}
 	}
 	
-	qDebug()<<"taskset::reloadContexts: "<<contexts<<endline;
-}
-
-
-void taskset::recalculate()
-/* Data of display has been modified, refresh the internal data:
-- through all tasks, 
-*/{
-	QSettings settings;
-	QStringList words = settings.value(SETTINGS_INACTIVE,DEFAULT_INACTIVE).toString().split(';');
-	for(vector<task*>::const_iterator iter=content.begin();iter!=content.end();++iter){
-		(*iter)->setActive(true);
-		for (QString i:words){
-			if ((*iter)->getRaw().contains(i)){
-				(*iter)->setActive(false);
-				break;
-			}
-		}
-	}
+	qDebug()<<"taskset::recalculate: "<<contexts<<endline;
 
 }
 
 
 //*************************************************************************************************************************
 
-noteset::noteset(QUndoStack* undo, QObject* parent)
+noteset::noteset(QObject* parent)
 /*
 */{
 	Q_UNUSED(parent)
-	Q_UNUSED(undo)
 	notes=new notetxt(this);
 	content="";	
 	connect(notes,SIGNAL(WriteError(QString)),this, SIGNAL(backendError(QString)));
