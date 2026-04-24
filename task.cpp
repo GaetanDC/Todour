@@ -210,6 +210,7 @@ void task::parse(QString s,bool strict)
 		auto nnn=matches.next();
 		progress = nnn.captured("p").toInt();
 	}
+	else progress = 0;
 
 	
 	QString c;

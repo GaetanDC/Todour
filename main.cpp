@@ -36,13 +36,13 @@ void testTasks()
 
    std::vector<task*> content;
 
-content.push_back(new task("2025-06-22 This is a simple task"));
+content.push_back(new task("2025-06-22 This is a simple task #12%"));
 content.push_back(new task("(A) 2025-06-22 This is a simple task"));
 content.push_back(new task("(B) 2025-06-23 This is another task t:2026-03-20"));
 content.push_back(new task("x (A) 2025-06-24 This is a simple task due:2030-03-01"));
-content.push_back(new task("(A) 2025-06-25 This is a simple task t:2020-01-01 rec:+1y"));
+content.push_back(new task("(A) 2025-06-25 This is a simple task #67% t:2020-01-01 rec:+1y"));
 content.push_back(new task("(A) 2025-06-26 This is a simple task t:2026-04-01 due:2026-04-15"));
-content.push_back(new task("(A) 2025-06-27 This is a simple task t:+home"));
+content.push_back(new task("(A) 2025-06-27 This is a simple task #01% t:+home"));
 content.push_back(new task("(A) 2025-06-28 This is a complex task +home #IT @testing"));
 content.push_back(new task("(A) 2025-06-29 color:red This is a simple task"));
 
@@ -65,7 +65,7 @@ for (std::vector<task*>::iterator i=content.begin(); i!=content.end();i++){
 	qDebug()<<"  Contexts: "<<(*i)->getContexts()<<endline;		
 	qDebug()<<"  Threshold Contexts: "<<(*i)->getThresholdContexts()<<endline;
 	qDebug()<<"  URL: "<<(*i)->getURL()<<endline;		
-
+	qDebug()<<"  Progress: "<<(*i)->getProgress()<<endline;
 	
 	}
 	

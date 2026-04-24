@@ -146,6 +146,12 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
 	if(role == Qt::UserRole+5){  //UserRole+5 returns thresholdContexts
 		return QVariant(tasklist->at(index.row())->getThresholdContexts());
 	}
+	if(role == Qt::UserRole+6){  //UserRole+6 returns Priority
+		return QVariant(tasklist->at(index.row())->getPriority());
+	}
+	if(role == Qt::UserRole+7){  //UserRole+6 returns Checked
+		return QVariant(tasklist->at(index.row())->isComplete());
+	}
 	
    
 	return QVariant();
