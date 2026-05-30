@@ -6,12 +6,20 @@ AddCommand::AddCommand(taskset* _list, task* _t, QUndoCommand *parent)
     : QUndoCommand(parent),  _task(_t),tasklist(_list)
 /* */
 {
+	query =new QSqlQuery(QSqlDatabase::database("todoDB",false));
+	query->prepare("INSERT INTO tasks (id, forename, surname) "
+                  "VALUES (:id, :forename, :surname)");
+    query->bindValue(":id", 1001);
+    query->bindValue(":forename", "Bart");
+    query->bindValue(":surname", "Simpson");
+
 	setText("New task");
 }
 
 AddCommand::~AddCommand()
-/* */
-{}
+/* */{
+	delete query;
+}
 
 void AddCommand::undo()
 /* undo() of addCommand is a remove
@@ -23,7 +31,7 @@ void AddCommand::undo()
 void AddCommand::redo()
 /* redo() add is adding again
 */
-{
+{    
 	tasklist->addTask(_task);
 }
 
@@ -41,12 +49,18 @@ DeleteCommand::DeleteCommand(taskset* _list, QUuid index, QUndoCommand *parent)
     : QUndoCommand(parent),  tasklist(_list),_tuid(index) 
 /*	_task = is initialised in the redo */
 {
+	query = new QSqlQuery(QSqlDatabase::database("todoDB",false));
+	query->prepare("DELETE FROM tasks "
+                  "WHERE (id = :id)");
+    query->bindValue(":id", 1001);
+
 	setText("Delete");
 }
 
 DeleteCommand::~DeleteCommand()
-/* */
-{}
+/* */{
+	delete query;
+	}
 
 void DeleteCommand::undo()
 /* UNDO DELETE means we have to add a task in the list.
@@ -82,13 +96,26 @@ EditCommand::EditCommand(taskset* _list, task* t, QString _new_raw, QUndoCommand
     :QUndoCommand(parent), tasklist(_list), _task(t), new_raw(_new_raw)
 /* */
 {
+	query = new QSqlQuery(QSqlDatabase::database("todoDB",false));
+	query->prepare("UPDATE tasks "
+						"SET text = :text "
+						"WHERE ID= :id");
+    query->bindValue(":id", 1001);
+    query->bindValue(":text", _new_raw);
+//#TODO: we have only 1 edit command for all the edits. But we will need to split this in multiple.
+// #BUG it won't work as is.
+// OPTION1 is to group all the "edit" undoCommands, get info in parameters, and create the SQL
+// OPTION 2 is to create a type of undoCommand for all possible undos.  with inheritance, is should be easy...
+// ANYWAY, we have the detail info above, we should not loose it in the function call.
+
 	old_raw = t->getRaw();
 	setText("Edit");
 }
 
 EditCommand::~EditCommand()
-/* */
-{}
+/* */{
+	delete query;
+	}
 
 void EditCommand::undo()
 /* */
@@ -121,6 +148,13 @@ CompleteCommand::CompleteCommand(taskset* _list, task* t, bool complete, QUndoCo
     :QUndoCommand(parent), _task(t),_complete(complete), tasklist(_list)
 /* */
 {
+	query = new QSqlQuery(QSqlDatabase::database("todoDB",false));
+	query->prepare("UPDATE tasks "
+						"SET isDone = :isdone "
+						"WHERE ID= :id");
+    query->bindValue(":id", 1001);
+    query->bindValue(":isdone", complete);
+
 	setText("Complete");
 	rec_task = nullptr;
 }
@@ -135,8 +169,10 @@ CompleteCommand::CompleteCommand(taskset* _list, task* t, QUndoCommand *parent)
 }
 
 CompleteCommand::~CompleteCommand()
-/* #TODO  check*/
-{}
+/* #TODO  check
+*/{
+	delete query;
+	}
 
 void CompleteCommand::undo()
 /* */
@@ -174,13 +210,22 @@ PriorityCommand::PriorityCommand(taskset* _list, task* t, QChar prio, QUndoComma
     :QUndoCommand(parent), _task(t), _priority(prio), tasklist(_list)
 /* */
 {
+	query = new QSqlQuery(QSqlDatabase::database("todoDB",false));
+	query->prepare("UPDATE tasks "
+						"SET priority = :priority "
+						"WHERE ID= :id");
+    query->bindValue(":id", 1001);
+    query->bindValue(":priority", prio);
+
 	setText("Priority");
 	_p_priority = _task->getPriority();
 }
 
 PriorityCommand::~PriorityCommand()
-/* #TODO  check*/
-{}
+/* #TODO  check
+*/{
+	delete query;
+	}
 
 void PriorityCommand::undo()
 /* */
@@ -220,8 +265,9 @@ PostponeCommand::PostponeCommand(taskset* _list, task* t, QString postp, QUndoCo
 }
 
 PostponeCommand::~PostponeCommand()
-/* #TODO  check*/
-{}
+/*
+*/{
+}
 
 // §§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§
 
@@ -231,12 +277,20 @@ ProgressCommand::ProgressCommand(task* t, int pcvalue, QUndoCommand *parent)
 */{
 	previousValue = _task->getProgress();
 	newValue=min(99,previousValue+pcvalue);
+
+	query = new QSqlQuery(QSqlDatabase::database("todoDB",false));
+	query->prepare("UPDATE tasks "
+						"SET progress = :progress "
+						"WHERE ID= :id");
+    query->bindValue(":id", 1001);
+    query->bindValue(":progress", newValue);
+	
 }
 
 ProgressCommand::~ProgressCommand()
 /*
 */{
-
+	delete query;
 }
 void ProgressCommand::undo()
 /*
@@ -258,8 +312,5 @@ bool ProgressCommand::mergeWith(const QUndoCommand *other)
 /*
 */{
 	Q_UNUSED(other)
+	return false;
 }
-
-
-
-

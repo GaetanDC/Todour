@@ -7,7 +7,7 @@
 QT += network
 # QT += statemachine
 
-QT       += core gui widgets printsupport
+QT       += core gui widgets printsupport sql
 QT +=xml
 
 TARGET = Todour

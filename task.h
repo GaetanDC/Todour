@@ -21,6 +21,7 @@ Author Gaetan DC
 #include <QList>
 
 
+
 enum eTaskCriticity{
 Todour_NoFiltert=0,
 Todour_TodaysViewt=2,
@@ -39,8 +40,11 @@ class task
 {
 private:
 	QString _raw;
+	
+	int dbIndex;
 	QString displayText;
 	QString description;
+	QString recurrence;
 	QUuid _tuid;
 	QDateTime _ttag;
 	QDateTime _complete_date;
@@ -57,6 +61,7 @@ private:
 	QList<subtask> subtasks;
 	
 public:
+	task(int _dbIndex, QString _text, bool _isDone);
 	task(QString s="", QString context="", bool loaded=false);
 	task(task* copy);
 	task(QString s, QUuid tuid);
@@ -67,6 +72,7 @@ public:
 	void setDueDate(QDateTime d);
 	void setThresholdDate(QDateTime d);
 	void setInputDate(QDateTime d);
+	 void setDoneDate(QDateTime d);
 	void setColor(QString c);
 	void setColor(QColor c);
 	void setDescription(QString s);
@@ -74,7 +80,10 @@ public:
 	task* setComplete(bool c = true); // manage the rec:...
 	void setRaw(QString s);
 	void setProgress(int);
-	
+	void setRecurrence(QString s);
+	void setContexts(QStringList sl);
+	void addContext(QString s);
+	void rmContext(QString s);
 	
 	inline QDateTime const *getDueDate() {return &dueD;};
 	inline QDateTime const *getThresholdDate() {return &thrD;};
@@ -83,9 +92,9 @@ public:
 	inline QColor const *getColor() {return &color;};
 	inline QUuid getTuid() const{return _tuid;}
 	inline Qt::CheckState isComplete() const {return complete;};
-	inline QString getDisplayText() const {return displayText;};	/* text for display in todour*/
+	QString getDisplayText() const;
 	inline QString getRaw() const {return _raw;};	/* returns the full text, used for edit */
-	inline QString getEditText() const {return _raw;};/* text for edit in Todour*/
+	QString getEditText() const;/* text for edit in Todour*/
 	inline QString getDescription() const {return description;}; 	/* text for display in future tool. return only the descriptive part of the text, without t: due: color: utid: ...   TODO*/
 	inline QDateTime getTimeStamp() const {return _ttag;}  //for future sync
 	inline bool operator==(task &t){return t.getTuid()==_tuid;}
@@ -94,10 +103,14 @@ public:
 	inline bool isActive() const {return active;};
 	inline void setActive(bool state){active=state;};
 	inline int getProgress() const {return progress;};
+
 	inline QList<subtask>* getSubtasks() {return &subtasks;};
+
+	inline int getDbIndex() {return dbIndex;};
 
 	subtask* getSubtask(int i){return &subtasks[i];};
 	void setSubtask(int i, QString _text, bool _isDone);
+	void addSubtask( QString _text, bool _isDone);
 	
 	QString getURL() const;	
 	

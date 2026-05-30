@@ -44,6 +44,16 @@ bool task::is_txt_compatible()
 	return true;
 }
 
+task::task(int _dbIndex, QString _text, bool _isDone)
+	:dbIndex(_dbIndex), displayText(_text)
+/* Creates an empty task, based on given dbIndex
+*/{
+	if (_isDone) complete=Qt::Checked;
+	else complete=Qt::Unchecked;
+
+}
+
+
 task::task(QString s, QString context, bool loaded)
 /* Create a task based on input String. 
 	If loaded=true, don't assume any default (task is loaded from file)
@@ -74,6 +84,7 @@ task::task(QString s, QString context, bool loaded)
 		if (!_ttag.isValid())
 			_ttag=QDateTime::currentDateTime();
 
+		qDebug()<<"task(QString, QString, bool): deprecated use of parse()"<<endline;
 		parse(ret,true);
 	}
 	else //this is a new typed task, default inputdate if settings + tuid + ttag??
@@ -86,6 +97,7 @@ task::task(QString s, QString context, bool loaded)
 		
 		_ttag=QDateTime::currentDateTime();
 //		qDebug()<<" ttag:"+QString::number(_ttag.toSecsSinceEpoch())<<endline;
+		qDebug()<<"task(QString, QString, bool): deprecated use of parse()"<<endline;
 		parse(ret,true);
 
     	if(!inputD.isValid()&&(settings.value(SETTINGS_DATES).toBool()))
@@ -106,6 +118,7 @@ task::task(QString s, QUuid tuid)
 	_raw=s;
 	_tuid= tuid;
 	_ttag=QDateTime::currentDateTime();
+	qDebug()<<"task(QString, QUid): deprecated use of parse()"<<endline;
 	parse(s,true);
 
 }
@@ -234,6 +247,55 @@ void task::parse(QString s,bool strict)
 
 }
 
+QString task::getDisplayText() const
+/* text for display in todour
+*/{
+	QString ret = displayText;
+	if (!priority.isNull())
+			ret.prepend("("+QString(priority)+") ");
+		
+	// append thresholdDate?
+	if (thrD.isValid())
+			ret.append(" t:" + thrD.toString("yyyy-MM-dd"));
+
+	// append dueDate?
+	if (dueD.isValid())
+			ret.append(" due:" + dueD.toString("yyyy-MM-dd"));
+	
+	return ret;
+	}
+
+QString task::getEditText() const
+/* text for edit in Todour
+*/{
+	QString ret = displayText;
+
+	if (inputD.isValid())
+			ret.prepend(inputD.toString("yyyy-MM-dd")+" ");
+	
+	if (!priority.isNull())
+			ret.prepend("("+QString(priority)+") ");
+	
+	if (complete == Qt::Checked){
+		if (_complete_date.isValid())
+				ret.prepend(_complete_date.toString("yyyy-MM-dd")+" "); 
+		
+		ret.prepend("x "); 
+		}
+		
+		// append thresholdDate?
+	if (thrD.isValid())
+			ret.append(" t:" + thrD.toString("yyyy-MM-dd"));
+
+	// append dueDate?
+	if (dueD.isValid())
+			ret.append(" due:" + dueD.toString("yyyy-MM-dd"));
+
+	return ret;
+}
+
+
+
 void task::updateDisplayText()
 /* Update the DisplayText based on _raw.
 */{
@@ -280,33 +342,19 @@ void task::updateContexts()
 
 void task::setDueDate(QDateTime d)
 /* Update the due_date
-   remove any present dueDate + add due:... at the end.
 */
 {
 	if(! d.isValid()) return;
 	dueD=d;
-	_raw.remove(regex_due_date);
-	_raw.append(" due:"+d.toString("yyyy-MM-dd"));
-
-	this->updateDisplayText();
-//	this->updateDescription();
-//	this->updateContexts();
 	_ttag=QDateTime::currentDateTime();
 }
 
 void task::setThresholdDate(QDateTime d)
 /* Update the threshold_date
-   remove any present thD + add t:... at the end.
 */
 {
 	if(! d.isValid()) return;
 	thrD = d;
-	_raw.remove(regex_threshold_date);
-	_raw.append(" t:"+d.toString("yyyy-MM-dd"));
-
-	this->updateDisplayText();
-	this->updateDescription();
-	this->updateContexts();
 	_ttag=QDateTime::currentDateTime();
 }
 
@@ -314,24 +362,8 @@ void task::setInputDate(QDateTime d)
 /* place a date at beginning, but after priority.
 If a date is present, remove it first !*/
 {
-	QString traw = _raw;
-	
-	auto matches = regex_preamble.globalMatch(traw);
-	if (matches.hasNext())	{
-		auto nn=matches.next();
-		traw=nn.captured("ptk");
-		traw.prepend(d.toString("yyyy-MM-dd")+" ");
-		traw.prepend(nn.captured("ppr"));
-		traw.prepend(nn.captured("pxd"));
-		traw.prepend(nn.captured("px"));
-		_raw=traw;
-	}
-	
-	inputD=d;
-
-	this->updateDisplayText();
-//	this->updateDescription();
-//	this->updateContexts();
+	if(! d.isValid()) return;
+	inputD = d;
 	_ttag=QDateTime::currentDateTime();
 }
 
@@ -339,32 +371,17 @@ void task::setProgress(int _prog)
 /*
 */{
 	progress = _prog;
-	_raw.remove(regex_progress);
-	_raw.append(" #");
-	_raw.append(QString::number(_prog));
-	_raw.append("%");
-	this->updateDisplayText();
+	_ttag=QDateTime::currentDateTime();
 }
 
 void task::setColor(QString c)
 /* set / change the color.  if a color is present, it is updated,  if multiple colors are present, they got cleaned */
 {
-	_raw.remove(regex_color);
-	auto matches = regex_color.globalMatch(_raw);
-	if (matches.hasNext()){
-		c = matches.next().captured(1);
-		if (QColor::isValidColorName(c)){
+	if (QColor::isValidColorName(c))
 			color=QColor::fromString(c);
-			_raw.append(" color:");
-			_raw.append(c);
-		}
-	}
 	else
-		color=QColor::fromString("White");
+			color=QColor::fromString("White");
 
-	this->updateDisplayText();
-//	this->updateDescription();
-//	this->updateContexts();
 	_ttag=QDateTime::currentDateTime();
 }
 
@@ -374,34 +391,21 @@ void task::setColor(QColor c)
 	_ttag=QDateTime::currentDateTime();
 }
 
-void task::setDescription(QString s)
-/*
-NOT WORKING IN THIS STATE
-#IDEA: we should rebuilt the _raw, based on the new "description", + all the fields that we have.
-*/
-{
-qDebug()<<"   task::setDescription not implemented"<<endline;
-	// a définir : que contient exactement le text?
-	// ceci sera sans doute la fonction la plus utilisée: on a modifié le texte de la tache.
-  	//	==> Il faut tout ré-interpréter !
-    Q_UNUSED(s);
-}
+void task::setDescription(QString s) {description=s;}
+void task::setDoneDate(QDateTime d) {_complete_date = d;}
+void task::setRecurrence(QString s) {recurrence=s;}
+void task::setContexts(QStringList sl) {contexts = sl;}
+void task::addContext(QString s) {contexts.append(s);}
+void task::rmContext(QString s) {contexts.removeAll(s);}
+
+
 
 void task::setPriority(QChar c)
 /* Set the priority of task
-#BUG: il faut enlever tout ce qui ressemble à une priorité. Si il y en a 2 d'affilée, on enleve les 2.
-*/
-{
+*/{
 	if (c.isLetter()){
-		_raw.remove(regex_priority);	
-		_raw.prepend(") ");
-		_raw.prepend(c);
-		_raw.prepend("(");
 		priority=c;
 		_ttag=QDateTime::currentDateTime();
-		this->updateDisplayText();
-		this->updateDescription();
-//		this->updateContexts();
 	}
 }
 
@@ -409,6 +413,7 @@ void task::setRaw(QString s)
 /* Set raw text, by first interpreting it.
 */
 {
+	qDebug()<<"setRaw(QString): deprecated use of parse()"<<endline;
 	parse(s);
 }
 
@@ -424,41 +429,33 @@ task* task::setComplete(bool c)
 	task *ret=nullptr;
 //	_raw.remove(regex_done);
 	if (c){
-		auto match = regex_rec.match(_raw);
-		if (match.hasMatch()){
-			QString tmp = match.captured(1);
+		if (!recurrence.isEmpty()){
 			ret = new task(this);
 			QDateTime new_date;
 			if (this->getThresholdDate()->isValid()){ // t: is valid, and due is not
-				ret->setThresholdDate(task::getRelativeDate(tmp, getThresholdDate()));
+				ret->setThresholdDate(task::getRelativeDate(recurrence, getThresholdDate()));
 				}
 			if (this->getDueDate()->isValid()){ // due: is valid, and t: is not
-				ret->setDueDate(task::getRelativeDate(tmp, getDueDate()));
+				ret->setDueDate(task::getRelativeDate(recurrence, getDueDate()));
 				}
 			if (!this->getThresholdDate()->isValid() && !this->getDueDate()->isValid()){			  // nor t: nor due: are valid
 				if (settings.value(SETTINGS_DEFAULT_THRESHOLD,DEFAULT_DEFAULT_THRESHOLD) == "t:"){
-					ret->setThresholdDate(task::getRelativeDate(tmp, nullptr));
+					ret->setThresholdDate(task::getRelativeDate(recurrence, nullptr));
 				}
 			else{
-				ret->setDueDate(task::getRelativeDate(tmp, nullptr));
+				ret->setDueDate(task::getRelativeDate(recurrence, nullptr));
 				}
 					
 			}
 
 		}
-    	if(settings.value(SETTINGS_DATES).toBool())
- 				_raw.prepend("x "+QDateTime::currentDateTime().toString("yyyy-MM-dd")+" "); //we keep the priority??
- 		else
- 				_raw.prepend("x ");
+		_complete_date=QDateTime::currentDateTime();
  		complete=Qt::Checked;
 	}
 	else{
-		_raw.remove(regex_completedate);
+		_complete_date=QDateTime();	
 		complete=Qt::Unchecked;
 	}
-	this->updateDisplayText();
-	this->updateDescription();
-//	this->updateContexts();
 	_ttag=QDateTime::currentDateTime();
 
 	return ret;
@@ -501,6 +498,11 @@ void task::setSubtask(int i, QString _text, bool _isDone)
 	subtasks[i].isDone=_isDone;
 }
 
+void task::addSubtask( QString _text, bool _isDone)
+/*
+*/{
+	subtasks.append(*new subtask(_text,_isDone));
+}
 
 
 

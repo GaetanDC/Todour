@@ -70,7 +70,7 @@ private slots:
 
     		
     void on_tableView_customContextMenuRequested(const QPoint &pos);
-    void on_noteView_customContextMenuRequested(const QPoint &pos);
+    void on_subView_customContextMenuRequested(const QPoint &pos);
     		
     void on_actionStay_On_Top_changed();
     		

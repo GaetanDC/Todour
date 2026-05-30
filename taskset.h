@@ -15,7 +15,7 @@ class taskset:public QObject
 private:
 
 protected:
-	todo_backend  *todo;
+//	todo_backend  *todo;
    std::vector<task*> content;
 
 public:
@@ -33,7 +33,6 @@ public:
 	void flush();
 	void archive();
 	inline QStringList getContexts(){return contexts;};
-   void setFileWatch(bool b, QObject *parent);
 
 
 //for tablemodel

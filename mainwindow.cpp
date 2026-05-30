@@ -240,10 +240,11 @@ QSettings settings;
     if(!settings.contains(SETTINGS_LIVE_SEARCH))
         		settings.setValue(SETTINGS_LIVE_SEARCH,DEFAULT_LIVE_SEARCH);
     
-	if (settings.value(SETTINGS_NOTE_ENABLE,DEFAULT_NOTE_ENABLE).toBool())
-		ui->noteView->setVisible(true);
-	else 
-		ui->noteView->setVisible(false);
+//	if (settings.value(SETTINGS_NOTE_ENABLE,DEFAULT_NOTE_ENABLE).toBool())
+//		ui->noteView->setVisible(true);
+//	else 
+//		ui->noteView->setVisible(false);
+  
     ui->actionStay_On_Top->setChecked(settings.value(SETTINGS_STAY_ON_TOP,DEFAULT_STAY_ON_TOP).toBool());
     setTray();
     stayOnTop();
@@ -255,7 +256,7 @@ QSettings settings;
         f.setPointSize(size);
         qApp->setFont(f);
     }
-   task_set->setFileWatch(settings.value(SETTINGS_AUTOREFRESH).toBool(),(QObject*) this);
+//   task_set->setFileWatch(settings.value(SETTINGS_AUTOREFRESH).toBool(),(QObject*) this);
 	task_set->recalculate();
 
 	proxyModel->setContexts(task_set->getContexts());
@@ -312,9 +313,9 @@ MainWindow::~MainWindow()
 void MainWindow::toggleFocus()
 /* */
 {
-	if (!ui->noteView->isVisible()) return;
-	if (!ui->noteView->hasFocus()) ui->noteView->setFocus(Qt::OtherFocusReason);
-	else  ui->tableView->setFocus(Qt::OtherFocusReason);
+//	if (!ui->noteView->isVisible()) return;
+//	if (!ui->noteView->hasFocus()) ui->noteView->setFocus(Qt::OtherFocusReason);
+//	else  ui->tableView->setFocus(Qt::OtherFocusReason);
 }
 
 void MainWindow::updateTitle()
@@ -336,7 +337,7 @@ void MainWindow::on_tableView_customContextMenuRequested(const QPoint &pos)
 	ui->rClickMenu->popup(ui->tableView->viewport()->mapToGlobal(pos));
 	}
 
-void MainWindow::on_noteView_customContextMenuRequested(const QPoint &pos)
+void MainWindow::on_subView_customContextMenuRequested(const QPoint &pos)
 /* NOT IMPLEMENTED
 */{
 	Q_UNUSED(pos)
@@ -893,7 +894,7 @@ void MainWindow::handleNoteUpdate(QString txt)
 /*
 	note subsystem wants to change note content...
 */{
-	ui->noteView->setPlainText(txt);
+//	ui->noteView->setPlainText(txt);
 }
 
 
