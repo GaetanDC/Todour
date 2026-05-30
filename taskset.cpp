@@ -1,10 +1,6 @@
 #include "taskset.h"
 #include "def.h"
 #include "todotxt.h"
-//#include "caldav.h"
-
-#include <QMessageBox>
-#include <QRegularExpression>
 
 taskset::taskset(QObject *parent)
 /* 
@@ -120,23 +116,11 @@ void taskset::recalculate()
 		}
 
 			//check all tasks for inactive keywords
-		recalculateTask(*itask);
+		//recalculateTask(*itask);
+		(*itask)->recalculate(inactiveFlags);
 	}
 	
 	qDebug()<<"taskset::recalculate: "<<contexts<<endline;
-}
-
-void taskset::recalculateTask(task* wip)
-/*
-*/{
-		wip->setActive(true);
-		for (QString i:inactiveFlags){
-			if (wip->getDisplayText().contains(i)){
-				wip->setActive(false);
-				break;
-				}
-			}
-
 }
 
 

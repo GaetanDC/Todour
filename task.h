@@ -18,6 +18,7 @@ Author Gaetan DC
 #include <QUuid>
 #include <QDebug>
 #include <QDateTime>
+#include <QList>
 
 
 enum eTaskCriticity{
@@ -27,6 +28,11 @@ Todour_HideThresholdt=4,
 Todour_DueAsThresholdt=8,
 Todour_ShowInactivet=16
 };
+
+struct subtask {
+	QString text;
+	bool isDone;
+	};
 
 
 class task
@@ -48,6 +54,7 @@ private:
 	QStringList contexts;
 	QStringList thr_contexts;
 	int progress;
+	QList<subtask> subtasks;
 	
 public:
 	task(QString s="", QString context="", bool loaded=false);
@@ -67,7 +74,7 @@ public:
 	task* setComplete(bool c = true); // manage the rec:...
 	void setRaw(QString s);
 	void setProgress(int);
-
+	
 	
 	inline QDateTime const *getDueDate() {return &dueD;};
 	inline QDateTime const *getThresholdDate() {return &thrD;};
@@ -87,7 +94,10 @@ public:
 	inline bool isActive() const {return active;};
 	inline void setActive(bool state){active=state;};
 	inline int getProgress() const {return progress;};
-	
+	inline QList<subtask>* getSubtasks() {return &subtasks;};
+
+	subtask* getSubtask(int i){return &subtasks[i];};
+	void setSubtask(int i, QString _text, bool _isDone);
 	
 	QString getURL() const;	
 	
@@ -103,6 +113,7 @@ public:
 // === static functions ===
 	static QDateTime getRelativeDate(QString d, const QDateTime *base = nullptr);
 	
+	void recalculate(QStringList inactiveFlags);
 	
 protected:
 	void parse(QString s, bool strict=false);

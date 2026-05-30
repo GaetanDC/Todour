@@ -492,6 +492,17 @@ QString task::toSaveString_pureTODO() const
 	return getEditText();
 }
 
+void task::setSubtask(int i, QString _text, bool _isDone)
+/*
+*/{
+	if (i<0 || i>subtasks.size()) return;
+	subtasks[i].text=_text;
+	subtasks[i].isDone=_isDone;
+}
+
+
+
+
 QString task::toString() const
 /* returns the full QString for debugging, including all hidden data.
 */
@@ -508,6 +519,19 @@ QString task::toString() const
 	ret.append("\\n   display:"+getDisplayText());
 	return ret;
 }
+
+void task::recalculate(QStringList inactiveFlags)
+/* Recalculate internal "active" status based on received inactiveFlags
+*/{
+		setActive(true);
+		for (QString i:inactiveFlags){
+			if (_raw.contains(i)){
+				setActive(false);
+				break;
+				}
+			}
+}
+
 
 /*
 ====================================  STATIC FUNCTIONS ========================================
@@ -561,3 +585,5 @@ QDateTime task::getRelativeDate(QString d, const QDateTime* base)
         //return d.toString("yyyy-MM-dd")+extra;
         return ret;
 }
+
+

@@ -22,7 +22,6 @@ public:
    explicit taskset(QObject *parent = 0);
    ~taskset();
 	inline task* at(int position) const {return content.at(position);};
-	void recalculateTask(task* wip);
 
 
 
