@@ -45,8 +45,7 @@ SOURCES += main.cpp\
     taskset.cpp\
     version.cpp \
     todo_undo.cpp \
-    todo_proxymodel.cpp \
-    notetxt.cpp
+    todo_proxymodel.cpp
     
 
 HEADERS  += mainwindow.h \
@@ -61,8 +60,7 @@ HEADERS  += mainwindow.h \
     version.h \
     todo_undo.h \
     todo_backend.h \
-    todo_proxymodel.h \
-    notetxt.h
+    todo_proxymodel.h
 
 
 FORMS    += mainwindow.ui \

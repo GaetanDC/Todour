@@ -208,11 +208,20 @@ void TodoTableModel::safeEdit(const QModelIndex & index, QString _raw)
 	undoS->push(new EditCommand(tasklist, tasklist->at(index.row()),_raw));
 	}
 	
-void TodoTableModel::safeAdd(task* _t)
+void TodoTableModel::safeAdd(QString title, QString context)
 /* Safely add a task, creating an undo command
 */{
-	undoS->push(new AddCommand(tasklist,_t));
+
+	undoS->push(new AddCommand(tasklist,new task(title, context)));
+
   	}
+  	
+void TodoTableModel::safeDuplicate(task* t)
+/* Safely duplicate a task, creating an undo command
+*/{
+	undoS->push(new AddCommand(tasklist,new task(t)));
+
+}
       	 
 void TodoTableModel::safeDelete(QUuid index)
 /* Safely delete a task, creating an undo command

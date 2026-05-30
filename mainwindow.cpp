@@ -641,9 +641,8 @@ void MainWindow::on_addButton_clicked()
 void MainWindow::addTodo(QString &s, QString cont)
 /* 
 */{
-	task* t = new task(s,cont);
 	model->startModelChange("add");
-	model->safeAdd(t);
+	model->safeAdd(s,cont);
 	model->endModelChange();
    updateTitle();
 }
@@ -793,13 +792,13 @@ void MainWindow::on_actionPostpone()
 */{
     QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
     if(!indexes.empty()){
-	model->startModelChange("postpone");
+		model->startModelChange("postpone");
 		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
 			model->safePostpone(*i,"t:+10d");
-		}
-	model->endModelChange();		
-	    updateTitle();
-    }
+			}
+		model->endModelChange();		
+	   updateTitle();
+      }
 }
 
 void MainWindow::on_actionDuplicate()
@@ -809,7 +808,7 @@ void MainWindow::on_actionDuplicate()
 	if (! indexes.isEmpty()){
 	model->startModelChange("duplicate");
 		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-			model->safeAdd(new task(task_set->at(i->row())));
+			model->safeDuplicate(model->getTask(*i));
 		}
 		model->endModelChange();		
 		updateTitle();

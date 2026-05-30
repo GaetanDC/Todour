@@ -66,15 +66,6 @@ void taskset::backendDataLoaded()
 //  		qDebug()<<"void taskset::backendDataLoaded() - all tasks loaded"<<endline;
 }
 
-void taskset::toggleDone(int position)
-/* 
-*/{
-Q_UNUSED(position);
-	//TODO: URGENT: update the undo framework for work with taskset and not model.
-  
-    }
-
-
 void taskset::archive()
 /* Remove all the "finished" tasks and move them to the "done" file.
 */{

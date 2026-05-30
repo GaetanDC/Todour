@@ -31,7 +31,8 @@ public:
 
 	 void safeComplete(const QModelIndex & index, bool state);
 	 void safeEdit(const QModelIndex & index, QString _raw);
-    void safeAdd(task* _t);
+    void safeAdd(QString title, QString context);
+    void safeDuplicate(task* t);
     void safeDelete(QUuid index);
     void safePostpone(const QModelIndex & index, QString txt);
     void safePriority(const QModelIndex & index, QChar prio);

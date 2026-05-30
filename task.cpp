@@ -118,6 +118,7 @@ task::task(task* copy)
 	_tuid=QUuid::createUuid();
 	_ttag=QDateTime::currentDateTime();
 	setInputDate(QDateTime::currentDateTime());
+	setActive(copy->isActive());
 }
 
 task::~task()

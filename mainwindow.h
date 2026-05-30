@@ -17,7 +17,6 @@
 #include "version.h"
 #include "taskset.h"
 #include "todo_proxymodel.h"
-#include "notetxt.h"
 
 namespace Ui {
 class MainWindow;
