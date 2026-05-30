@@ -184,9 +184,9 @@ MainWindow::MainWindow(QWidget *parent) :
    ui->tableView->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
    ui->tableView->resizeColumnToContents(0); // Checkboxes kept small
 
-	note_set = new noteset(this);
-	connect(note_set,SIGNAL(updateText(QString)),this,SLOT(handleNoteUpdate(QString)));
-	note_set->reLoad();	
+//	note_set = new noteset(this);
+//	connect(note_set,SIGNAL(updateText(QString)),this,SLOT(handleNoteUpdate(QString)));
+//	note_set->reLoad();	
 //	connect(ui->noteView, SIGNAL(textChanged()),this,SLOT(noteTextChanged()));
 
 
@@ -672,7 +672,7 @@ void MainWindow::on_actionSave_triggered()
 		task_set->flush();
    	_undoStack->setClean();
    	}
-   note_set->handleTextChanged(ui->noteView->toPlainText());
+//   note_set->handleTextChanged(ui->noteView->toPlainText());
 }
 
 void MainWindow::cleanup()

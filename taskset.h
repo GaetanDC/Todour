@@ -58,38 +58,4 @@ private:
 };
 
 
-
-#include "notetxt.h"
-
-class noteset : public QObject
-{
-
-Q_OBJECT
-
-public:
-	noteset(QObject* parent);
-	~noteset();
-
-	void handleTextChanged(QString newtext); // text changed in UI, write it on disk. Only launched by save or equiv.
-
-   void setFileWatch(bool b, QObject *parent); //cannot be used.
-	void flush();
-	QString toString();
-	void reLoad();	
-
-	
-public slots:
-   void backendDataLoaded();						// text-file rady to load
-
-signals:
-	void backendError(QString txt);
-	void dataSavedOK();
-	void updateText(QString txt);
-
-private:
-	notetxt* notes;
-	QString content;
-};
-
-
-#endif //define TASKSET_H
+#endif //TASKSET_H

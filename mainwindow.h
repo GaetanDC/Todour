@@ -133,7 +133,7 @@ private:
 	todour_version *Version;
 	
 	taskset* task_set;
-	noteset* note_set;
+//	noteset* note_set;
 	QUndoStack* _undoStack;
            
     QCompleter* _taglist;
