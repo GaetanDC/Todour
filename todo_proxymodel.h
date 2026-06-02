@@ -71,5 +71,4 @@ Q_DECLARE_FLAGS(TodourFilterMode, iTaskFilterMode)
 	Q_DECLARE_OPERATORS_FOR_FLAGS(todoProxyModel::TodourFilterMode)
 
 
-
 #endif //#ifndef TODO_PROXYMODEL_H

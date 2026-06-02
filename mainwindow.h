@@ -49,6 +49,7 @@ private slots:
     inline void on_actionCheck_for_updates_triggered() {Version->onlineCheck(true);}
     inline void on_actionManual_triggered()
     		{QDesktopServices::openUrl(QUrl("https://sverrirvalgeirsson.github.io/Todour"));};    
+    		
     inline void on_actionQuit_triggered(){cleanup();}
 	 void toggleFocus();
 
@@ -58,12 +59,12 @@ private slots:
     void on_pb_closeVersionBar_clicked();
     void on_progressAction_triggered();
 
-
     inline void on_lineEditNew_returnPressed() {on_addButton_clicked();}
     void on_lineEditFilter_returnPressed();
 
     void on_hotkey();
     void on_context_lock_toggled(bool checked);
+    void on_toggleNoteButton_toggled(bool checked);
 
     void iconActivated(QSystemTrayIcon::ActivationReason reason);
     void cleanup(); // Need to have a quit slot of my own to save settings and so on.

@@ -18,51 +18,57 @@ taskset::taskset(QObject *parent)
    QSqlDatabase todoDB = QSqlDatabase::addDatabase("QSQLITE","todoDB");
    todoDB.setDatabaseName("/home/gaetan/todo.db");
    if (! todoDB.open()){
-        qDebug()<<todoDB.lastError().driverText()<<endline;
-        qDebug()<<todoDB.lastError().databaseText()<<endline;
         emit backendError("Unable to open database");
+        return;
         }
-	else {
-   	qDebug()<<"mainWindow: database is open."<<endline;
-	   //this->setTable("tasks");
+   QSqlQuery query_sub=*new QSqlQuery(todoDB);
+   QSqlQuery query = *new QSqlQuery("SELECT "
+      	"ID," // value(0)
+      	"text," // value(1)
+      	"inputDate," // value(2)
+      	"doneDate," // value(3)
+      	"dueDate," // value(4)
+      	"thresDate," // value(5)
+      	"isDone," // value(6)
+      	"progress," // value(7)
+      	"tags," // value(8)
+      	"color," // value(9)
+      	"priority," // value(10)
+      	"recurrence," // value(11)
+      	"longText " // value(12)
+      	"FROM tasks WHERE Archived=0"
+      	,todoDB);
+   task* t;
+   while (query.next()) {
+      query_sub.prepare("SELECT text,isDone FROM subtasks "
+      		"WHERE parent=:id");
+  		query_sub.bindValue(":id", query.value(0).toInt());
+		query_sub.exec();
       
-      QSqlQuery query = *new QSqlQuery("SELECT "
-      		"ID," // value(0)
-      		"text," // value(1)
-      		"inputDate," // value(2)
-      		"doneDate," // value(3)
-      		"dueDate," // value(4)
-      		"thresDate," // value(5)
-      		"isDone," // value(6)
-      		"progress," // value(7)
-      		"tags," // value(8)
-      		"color," // value(9)
-      		"priority," // value(10)
-      		"recurrence," // value(11)
-      		"longText " // value(12)
-      		"FROM tasks WHERE Archived=0"
-      		,QSqlDatabase::database("todoDB",false));
-      task* t;
-      while (query.next()) {
-      	qDebug()<<query.value(0).toInt()<<" "<<query.value(1).toString()<<endline;
-			t = new task(query.value(0).toInt(),query.value(1).toString(),query.value(6).toBool());
-			
-			t->setInputDate(QDateTime::fromString(query.value(2).toString(),"yyyy-MM-dd"));
-			t->setDoneDate(QDateTime::fromString(query.value(3).toString(),"yyyy-MM-dd"));
-			t->setDueDate(QDateTime::fromString(query.value(4).toString(),"yyyy-MM-dd"));
-			t->setThresholdDate(QDateTime::fromString(query.value(5).toString(),"yyyy-MM-dd"));
-			t->setColor(QColor::fromString(query.value(9).toString()));
-			t->setDescription(query.value(12).toString());
-			t->setPriority(query.value(10).toChar());
-			t->setProgress(query.value(7).toInt());
-			t->setRecurrence(query.value(11).toString());
-			t->setContexts(query.value(8).toStringList());
-			 
-			 //Load here the subtasks.
-			 
-		    addTask(t);
-      	 }
-      }
+      qDebug()<<query.value(0).toInt()<<" "<<query.value(1).toString()<<endline;
+		t = new task(query.value(0).toInt(),query.value(1).toString(),query.value(6).toBool());
+		
+		t->setInputDate(QDateTime::fromString(query.value(2).toString(),"yyyy-MM-dd"));
+		t->setDoneDate(QDateTime::fromString(query.value(3).toString(),"yyyy-MM-dd"));
+		t->setDueDate(QDateTime::fromString(query.value(4).toString(),"yyyy-MM-dd"));
+		t->setThresholdDate(QDateTime::fromString(query.value(5).toString(),"yyyy-MM-dd"));
+		t->setColor(QColor::fromString(query.value(9).toString()));
+		t->setDescription(query.value(12).toString());
+		t->setPriority(query.value(10).toChar());
+		t->setProgress(query.value(7).toInt());
+		t->setRecurrence(query.value(11).toString());
+		t->setContexts(query.value(8).toStringList());
+
+			//Load here the subtasks.
+		qDebug()<<query_sub.lastQuery()<<endline;		
+		while (query_sub.next()) {
+	      qDebug()<<query_sub.value(0).toString()<<" "<<query.value(1).toInt()<<endline;
+			t->addSubtask( query_sub.value(0).toString(),query_sub.value(1).toBool());
+			}
+
+		addTask(t);
+    	}
+   
 	recalculate();
 }
     

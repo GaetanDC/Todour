@@ -95,7 +95,7 @@ public:
 	QString getDisplayText() const;
 	inline QString getRaw() const {return _raw;};	/* returns the full text, used for edit */
 	QString getEditText() const;/* text for edit in Todour*/
-	inline QString getDescription() const {return description;}; 	/* text for display in future tool. return only the descriptive part of the text, without t: due: color: utid: ...   TODO*/
+	inline QString getDescription() const {return description;};
 	inline QDateTime getTimeStamp() const {return _ttag;}  //for future sync
 	inline bool operator==(task &t){return t.getTuid()==_tuid;}
 	inline QStringList getContexts(){return contexts;};

@@ -501,6 +501,7 @@ void task::setSubtask(int i, QString _text, bool _isDone)
 void task::addSubtask( QString _text, bool _isDone)
 /*
 */{
+	qDebug()<<"Task: adding a subtask."<<endline;
 	subtasks.append(*new subtask(_text,_isDone));
 }
 

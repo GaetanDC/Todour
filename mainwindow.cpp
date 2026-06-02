@@ -183,7 +183,19 @@ MainWindow::MainWindow(QWidget *parent) :
    ui->tableView->setModel(proxyModel);
    ui->tableView->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
    ui->tableView->resizeColumnToContents(0); // Checkboxes kept small
+	
+	
+	
+	model->registerSubtasks(ui->subView);
+	model->registerNotes(ui->noteView);
+	model->registerTableView(ui->tableView);
+	//qDebug()<<"Mainwindow "<<ui->tableView->selectionModel()<<endline;
+	
+	connect(ui->tableView->selectionModel(), SIGNAL(currentChanged(const QModelIndex, const QModelIndex)), model, SLOT(updateViews(const QModelIndex ,const QModelIndex)));
+	connect(ui->subView, SIGNAL(cellChanged(int, int)),model,SLOT(subEdited(int, int)));
 
+
+	ui->noteView->setVisible(false);
 //	note_set = new noteset(this);
 //	connect(note_set,SIGNAL(updateText(QString)),this,SLOT(handleNoteUpdate(QString)));
 //	note_set->reLoad();	
@@ -239,12 +251,7 @@ QSettings settings;
       // Set some defaults if they dont exist
     if(!settings.contains(SETTINGS_LIVE_SEARCH))
         		settings.setValue(SETTINGS_LIVE_SEARCH,DEFAULT_LIVE_SEARCH);
-    
-//	if (settings.value(SETTINGS_NOTE_ENABLE,DEFAULT_NOTE_ENABLE).toBool())
-//		ui->noteView->setVisible(true);
-//	else 
-//		ui->noteView->setVisible(false);
-  
+      
     ui->actionStay_On_Top->setChecked(settings.value(SETTINGS_STAY_ON_TOP,DEFAULT_STAY_ON_TOP).toBool());
     setTray();
     stayOnTop();
@@ -309,6 +316,14 @@ MainWindow::~MainWindow()
     delete ui;
     delete model;
 	}
+
+void MainWindow::on_toggleNoteButton_toggled(bool state)
+/*
+*/{
+	ui->noteView->setVisible(state);
+	ui->subView->setVisible(!state);
+
+}
 
 void MainWindow::toggleFocus()
 /* */
@@ -750,9 +765,7 @@ void MainWindow::on_actionSpace()
 void MainWindow::on_actionEdit()
 /* User clicked on "Edit". We enable the editing of the line.
 */{
-   QModelIndex index = proxyModel->mapToSource(ui->tableView->selectionModel()->currentIndex());
-    if(index.isValid())
-     	   ui->tableView->edit(index);
+     	   ui->tableView->edit(ui->tableView->selectionModel()->currentIndex());
 }
 
 void MainWindow::on_actionComplete()

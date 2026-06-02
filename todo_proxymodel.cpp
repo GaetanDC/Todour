@@ -171,9 +171,5 @@ void todoProxyModel::updateFilterText(QString filter)
     
 //	qDebug()<<"todoProxyModel::updateFilterText new filter="<<this->filterRegularExpression()<<endline;
 
-//we use the basis class to filter based on text.
-
-    
+//we use the basis class to filter based on text. 
 }
-
-

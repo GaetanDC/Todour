@@ -7,6 +7,8 @@
 #include <QUndoStack>
 #include <vector>
 #include "taskset.h"
+#include <QTableWidget>
+#include <QTextEdit>
 
 class TodoTableModel : public QAbstractTableModel{
     Q_OBJECT
@@ -29,6 +31,10 @@ public:
 	QString toString();
 
 
+
+	void safeAddSub(QString _title, bool _isDone, task* parent);
+	void safeEditSub(QString _title, bool _isDone, int ID, task* parent);
+
 	 void safeComplete(const QModelIndex & index, bool state);
 	 void safeEdit(const QModelIndex & index, QString _raw);
     void safeAdd(QString title, QString context);
@@ -46,11 +52,21 @@ public:
 	void startModelChange(QString desc);
 	void endModelChange();
 
+	inline void registerSubtasks(QTableWidget* n) {subtasksView = n;};
+	inline void registerNotes(QTextEdit* n) {noteView = n;};
+	inline void registerTableView(QTableView* n) {tableView = n;};
+
 signals:
-public slots:	
+public slots:
+	void updateViews(const QModelIndex & current, const QModelIndex & previous);
+	void subEdited(int row, int col);
 private:
 	QUndoStack* undoS;
-
+	
+	QTableWidget* subtasksView;
+	QTextEdit* noteView;
+	QTableView* tableView;
 };
+
 
 #endif // TODOTABLEMODEL_H

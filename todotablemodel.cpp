@@ -5,6 +5,7 @@
 #include <QRegularExpression>
 #include <QDebug>
 #include <vector>
+#include <QList>
 
 #include "todo_undo.h"
 
@@ -157,11 +158,10 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
 	return QVariant();
 }
 
-
 bool TodoTableModel::setData(const QModelIndex & index, const QVariant & value, int role)
 /* 
 */{
-	this->beginResetModel();
+//	this->beginResetModel();
 
    if(index.column()==0 && role == Qt::CheckStateRole)
   	 		this->safeComplete(index,value.toBool());  
@@ -171,8 +171,8 @@ bool TodoTableModel::setData(const QModelIndex & index, const QVariant & value, 
    	}
 
 	tasklist->recalculate();
-	this->endResetModel();
-
+//	this->endResetModel();
+	emit dataChanged(index,index);
    return true;
 }
 
@@ -193,8 +193,72 @@ void TodoTableModel::endModelChange()
 
 }
 
+void TodoTableModel::updateViews(const QModelIndex & current, const QModelIndex & previous)
+/* Update other views. The main related view is update internally
+*/{
+	Q_UNUSED(previous)
+	qDebug()<<"TodoTableModel::updateViews launched, current="<<current<<endline;
+	if (noteView != nullptr)
+		noteView->setPlainText(tasklist->at(current.row())->getDescription());
+	
+	if (subtasksView != nullptr){
+		subtasksView->clearContents();
+		QList<subtask> subT = * tasklist->at(current.row())->getSubtasks();
+//		qDebug()<<"updateViews: st="<<st.size()<<endline;
+		subtasksView->setRowCount(subT.size()+1);
+		for (int it=0; it!=subT.size();it++){
+			QTableWidgetItem *newcheck = new QTableWidgetItem(QTableWidgetItem::Type);
+			if (subT.at(it).isDone)
+					newcheck->setCheckState(Qt::Checked);
+			else 
+					newcheck->setCheckState(Qt::Unchecked);
+					
+			QTableWidgetItem *newtxt = new QTableWidgetItem(subT.at(it).text, QTableWidgetItem::Type);
+			subtasksView->setItem(it, 0, newcheck);
+			subtasksView->setItem(it, 1, newtxt);
+//			qDebug()<<"updateViews, added 2 items"<<endline;
+
+			}
+		}
+
+}
+
+void TodoTableModel::subEdited(int row, int col)
+/*
+*/{
+// if row > subT.size(), c'est qu'on a une nouvelle sous-tache. Il faut l'ajouter via undoStack
+// if col = 0, on parle de check, on va chercher la valeur et on modifie (via undoStack)
+// if col = 1, on parle de text, on va chercher la valeur et on modifie (via undoStack)
+
+	QModelIndex _index = tableView->selectionModel()->currentIndex();
+	QList<subtask> subT = * tasklist->at(_index.row())->getSubtasks();
+	if (row > subT.size()){
+		safeAddSub(subtasksView->item(row,1)->data(Qt::DisplayRole).toString() , subtasksView->item(row,0)->data(Qt::DisplayRole).toBool(), tasklist->at(_index.row()));
+		}
+	else{
+//			safeEditSub(QString _title, bool _isDone, int ID, taks* parent);
+		}
+}
+
+
 ////%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //Safe commands generate the action through the _undo stack
+
+void TodoTableModel::safeAddSub(QString _title, bool _isDone, task* parent)
+/*
+*/{
+
+}
+
+
+void TodoTableModel::safeEditSub(QString _title, bool _isDone, int ID, task* parent)
+/*
+*/{
+
+}
+
+
+
 
 void TodoTableModel::safeComplete(const QModelIndex & index, bool state)
 /* Safely complete the tasks at position, creating an undo command
@@ -284,3 +348,5 @@ QString TodoTableModel::toString()
 */{
 	return QString("model : ")+"\n"+QString("  Contains n tasks: ")+QString::number((int)tasklist->size());
 }
+
+
