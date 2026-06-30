@@ -46,6 +46,8 @@ Q_DECLARE_FLAGS(TodourFilterMode, iTaskFilterMode)
 	inline TodourSortMode getSortMode() const{return actual_sort;};
 	void setSortMode(TodourSortMode mode);
 	
+//	QString getTaksNum();
+	
 	inline TodourFilterMode getFilterMode() const{return actual_filter;};
 	void setFilterMode(TodourFilterMode mode);
 

@@ -20,9 +20,9 @@ todoProxyModel::todoProxyModel(QObject *parent)
 
 todoProxyModel::~todoProxyModel()
 	/*
-*/{
+*/{}
 
-}
+
 
  bool todoProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 /* This is where we select the ordering. if left<right => return TRUE, otherwise return FALSE

@@ -38,8 +38,9 @@ public slots:
     
 private slots:
     void updateSettings();
-
-
+    
+    void HandleDataChange();
+    
     void on_lineEditFilter_textEdited(const QString &arg1);
 
     void on_actionSettings_triggered();
@@ -97,8 +98,7 @@ private slots:
    void on_actionRespectThreshold();
    void on_actionThresholdDue();
    void on_actionShowInactive();
-   
-   
+      
    void on_actionCopy();
    void on_actionSpace();
    void on_actionUndo();

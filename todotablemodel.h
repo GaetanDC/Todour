@@ -46,6 +46,7 @@ public:
 	void endModelChange();
 
 signals:
+	void dataChanged();
 public slots:	
 private:
 	QUndoStack* undoS;

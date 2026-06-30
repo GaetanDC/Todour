@@ -27,11 +27,7 @@
 
 #define NEW_VERSION_STRING "<a href=\"http://nerdur.com/todour-pl\">http://nerdur.com/todour-pl</a>"
 
-
 TodoTableModel *model=NULL;
-
-QString saved_selection; // Used for selection memory
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -156,9 +152,6 @@ MainWindow::MainWindow(QWidget *parent) :
     	connect(ui->respectThresholdAction, SIGNAL(triggered()), this, SLOT(on_actionRespectThreshold()));
    	connect(ui->thresholdDueAction, SIGNAL(triggered()), this, SLOT(on_actionThresholdDue()));
    	connect(ui->showInactiveAction, SIGNAL(triggered()), this, SLOT(on_actionShowInactive()));
-
-    	
-    	
     	
     	ui->btn_Alphabetical->setMenu(ui->sortMenu);
     	ui->btn_Alphabetical->setPopupMode( QToolButton::InstantPopup);
@@ -207,6 +200,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //ui->btn_Alphabetical->setChecked(settings.value(SETTINGS_SORT_ALPHA).toBool());
     QObject::connect(model,SIGNAL(dataChanged (const QModelIndex , const QModelIndex )), this, 
     		SLOT(dataInModelChanged(QModelIndex,QModelIndex)));
+    connect(model,SIGNAL(dataChanged()),this,SLOT(HandleDataChange()));
 
    ui->lineEditFilter->setText(settings.value(SETTINGS_SEARCH_STRING,DEFAULT_SEARCH_STRING).toString());
 
@@ -299,7 +293,7 @@ We need to update the title + recalculate the tasks active.
     Q_UNUSED(i1)
     
 	task_set->recalculate();
-	this->updateTitle();  
+	updateTitle();  
 	}
 
 MainWindow::~MainWindow()
@@ -366,6 +360,7 @@ void MainWindow::on_lineEditFilter_textEdited(const QString &arg1)
 	QSettings settings;
     if(settings.value(SETTINGS_LIVE_SEARCH,DEFAULT_LIVE_SEARCH).toBool()){
         proxyModel->updateFilterText(arg1);
+        updateTitle();
     }
 }
 
@@ -422,7 +417,6 @@ void MainWindow::on_actionSortInactive()
 	
 	proxyModel->setSortMode(newval);
 
-
 	//proxyModel->sort_InactiveLast(settings.value(SETTINGS_SEPARATE_INACTIVES,DEFAULT_SEPARATE_INACTIVES).toBool());
 }
 
@@ -447,6 +441,7 @@ nn can be in options.
    	ui->showInactiveAction->setEnabled(true);
 		}
 	proxyModel->setFilterMode(newval);
+	updateTitle();
 }
 
 void MainWindow::on_actionRespectThreshold()
@@ -464,6 +459,7 @@ void MainWindow::on_actionRespectThreshold()
 			newval &= ~todoProxyModel::HideThreshold;
 			
 	proxyModel->setFilterMode(newval);
+	updateTitle();
 }
 
 
@@ -478,7 +474,7 @@ void MainWindow::on_actionThresholdDue()
 	else
 		newval &= ~todoProxyModel::DueAsThreshold;
 	proxyModel->setFilterMode(newval);
-
+	updateTitle();
 }
 
 void MainWindow::on_actionShowInactive()
@@ -493,6 +489,7 @@ void MainWindow::on_actionShowInactive()
 	else
 		newval &= ~todoProxyModel::ShowInactive;
 	proxyModel->setFilterMode(newval);
+		updateTitle();
 }
 
 
@@ -673,6 +670,7 @@ void MainWindow::on_actionSave_triggered()
    	_undoStack->setClean();
    	}
    note_set->handleTextChanged(ui->noteView->toPlainText());
+   	updateTitle();
 }
 
 void MainWindow::cleanup()
@@ -866,6 +864,13 @@ void MainWindow::on_actionPrint_triggered()
 		text.setHtml(txt_str);
 		text.print(&printer);
 	}
+}
+
+void MainWindow::HandleDataChange()
+/* Model data has changed, we got the signal.
+- updateTitle
+*/{
+	updateTitle();
 }
 
 void MainWindow::on_actionSync_triggered()
