@@ -52,9 +52,9 @@ for (std::vector<task*>::iterator i=content.begin(); i!=content.end();i++){
 	qDebug()<<"  Displaytext: "<<(*i)->getDisplayText()<<endline;
 	qDebug()<<"  EditText: "<<(*i)->getEditText()<<endline;
 	qDebug()<<"  Description: "<<(*i)->getDescription()<<endline;
-	qDebug()<<"  Threshold date: "<<(*i)->getThresholdDate()->toString("ddMMMyyyy")<<endline;
-	qDebug()<<"  Due date: "<<(*i)->getDueDate()->toString("ddMMMyyyy")<<endline;
-	qDebug()<<"  Input date: "<<(*i)->getInputDate()->toString("ddMMMyyyy")<<endline;
+	qDebug()<<"  Threshold date: "<<(*i)->getThresholdDate().toString("ddMMMyyyy")<<endline;
+	qDebug()<<"  Due date: "<<(*i)->getDueDate().toString("ddMMMyyyy")<<endline;
+	qDebug()<<"  Input date: "<<(*i)->getInputDate().toString("ddMMMyyyy")<<endline;
 	qDebug()<<"  TimeStamp: "<<(*i)->getTimeStamp().toString("ddMMMyyyy")<<endline;
 	qDebug()<<"  Priority: "<<(*i)->getPriority()<<endline;
 	qDebug()<<"  Color: "<<(*i)->getColor()->name()<<endline;

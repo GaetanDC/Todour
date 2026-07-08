@@ -129,4 +129,21 @@ private:
 	task* _task;
 };
 
+class DueDateCommand : public QUndoCommand
+{
+public:
+	explicit DueDateCommand(task* t, QDateTime d,  QUndoCommand *parent = nullptr);
+	void undo() override;
+   void redo() override;
+	int id() const;
+	bool mergeWith(const QUndoCommand *other);
+	
+private:
+	QDateTime previousValue;
+	QDateTime newValue;
+	task* _task;
+};
+
+
+
 #endif // TODOUNDO_H

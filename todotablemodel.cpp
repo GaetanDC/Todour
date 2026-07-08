@@ -96,8 +96,8 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
         int due=INT_MAX;
     	QSettings settings;
     	if(settings.value(SETTINGS_DUE).toBool()){
-    		if (tasklist->at(index.row())->getDueDate()->isValid()){  //CHANGE
-				due = -(int) (tasklist->at(index.row())->getDueDate()->daysTo(QDateTime::currentDateTime()));  //CHANGE
+    		if (tasklist->at(index.row())->getDueDate().isValid()){  //CHANGE
+				due = -(int) (tasklist->at(index.row())->getDueDate().daysTo(QDateTime::currentDateTime()));  //CHANGE
 			}
 		}
         bool active = true;
@@ -128,7 +128,7 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
 	}
 
 	if(role == Qt::UserRole+1){  //UserRole+1 returns inputdate
-		return QVariant(*(tasklist->at(index.row())->getInputDate()));
+		return QVariant(tasklist->at(index.row())->getInputDate());
 	}
 
 	if(role == Qt::UserRole+2){  //UserRole+2 returns active state (bool)
@@ -136,11 +136,11 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
       }
 
 	if(role == Qt::UserRole+3){  //UserRole+3 returns thresholddate
-		return QVariant(*(tasklist->at(index.row())->getThresholdDate()));
+		return QVariant(tasklist->at(index.row())->getThresholdDate());
 	}
 
 	if(role == Qt::UserRole+4){  //UserRole+4 returns duedate
-		return QVariant(*(tasklist->at(index.row())->getDueDate()));
+		return QVariant(tasklist->at(index.row())->getDueDate());
 	}
 
 	if(role == Qt::UserRole+5){  //UserRole+5 returns thresholdContexts
@@ -251,6 +251,14 @@ void TodoTableModel::safeProgress(const QModelIndex & index)
 	undoS->push(new ProgressCommand(tasklist->at(index.row()), 20));
 	emit dataChanged();
 	}
+
+void TodoTableModel::safeDueDate(const QModelIndex & index, QDateTime d)
+/* safely set dueDate to d
+*/{
+	undoS->push(new DueDateCommand(tasklist->at(index.row()), d));
+	emit dataChanged();
+}
+
 
 void TodoTableModel::refresh()
 /*// what is exactly the scope of this?

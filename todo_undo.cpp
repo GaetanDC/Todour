@@ -258,8 +258,32 @@ bool ProgressCommand::mergeWith(const QUndoCommand *other)
 /*
 */{
 	Q_UNUSED(other)
+	return false;
 }
 
 
+// §§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§
+DueDateCommand::DueDateCommand(task* t, QDateTime d, QUndoCommand *parent)
+	:QUndoCommand(parent), newValue(d), _task(t)
+{
+	previousValue=t->getDueDate();
+}
 
+void DueDateCommand::undo()
+{
+	_task->setDueDate(previousValue);
+}
+
+void DueDateCommand::redo()
+{
+	_task->setDueDate(newValue);
+}
+
+int DueDateCommand::id() const {return 1;}
+bool DueDateCommand::mergeWith(const QUndoCommand *other)
+{
+	Q_UNUSED(other)
+	return false;
+}
+	
 

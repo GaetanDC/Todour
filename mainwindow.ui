@@ -389,6 +389,7 @@ border-radius: 5px;
     <addaction name="postponeAction"/>
     <addaction name="duplicateAction"/>
     <addaction name="progressAction"/>
+    <addaction name="dueTodayAction"/>
     <addaction name="priorityMenu"/>
 
  	 <widget class="QMenu" name="priorityMenu">
@@ -506,6 +507,12 @@ border-radius: 5px;
    <string>Progress +20%</string>
   </property>
  </action>
+ <action name="dueTodayAction">
+  <property name="text">
+   <string>Assign Today</string>
+  </property>
+ </action>
+
 
  <action name="ApriorAction">
   <property name="text">

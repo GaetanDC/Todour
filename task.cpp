@@ -145,7 +145,7 @@ void task::parse(QString s,bool strict)
 	matches = regex_due_date_r.globalMatch(s);
 	while (matches.hasNext())
 	{
-		QDateTime td = task::getRelativeDate(matches.next().captured(1));
+		QDateTime td = task::getRelativeDate(matches.next().captured(1),QDateTime());
 		if (td.isValid()){ //if new date is not valid, do nothing.
 			_raw.remove(regex_due_date_r);
 			_raw.append(" due:"+td.toString("yyyy-MM-dd"));
@@ -165,7 +165,7 @@ void task::parse(QString s,bool strict)
 	while (matches.hasNext())
 	{
 //		this->setThresholdDate(matches.next().captured(1),strict);
-		QDateTime td = task::getRelativeDate(matches.next().captured(1));
+		QDateTime td = task::getRelativeDate(matches.next().captured(1),QDateTime());
 		if (td.isValid()){ //if new date is not valid, do nothing
 			_raw.remove(regex_threshold_date_r);
 			_raw.append(" t:"+td.toString("yyyy-MM-dd"));
@@ -428,18 +428,18 @@ task* task::setComplete(bool c)
 			QString tmp = match.captured(1);
 			ret = new task(this);
 			QDateTime new_date;
-			if (this->getThresholdDate()->isValid()){ // t: is valid, and due is not
+			if (this->getThresholdDate().isValid()){ // t: is valid, and due is not
 				ret->setThresholdDate(task::getRelativeDate(tmp, getThresholdDate()));
 				}
-			if (this->getDueDate()->isValid()){ // due: is valid, and t: is not
+			if (this->getDueDate().isValid()){ // due: is valid, and t: is not
 				ret->setDueDate(task::getRelativeDate(tmp, getDueDate()));
 				}
-			if (!this->getThresholdDate()->isValid() && !this->getDueDate()->isValid()){			  // nor t: nor due: are valid
+			if (!this->getThresholdDate().isValid() && !this->getDueDate().isValid()){			  // nor t: nor due: are valid
 				if (settings.value(SETTINGS_DEFAULT_THRESHOLD,DEFAULT_DEFAULT_THRESHOLD) == "t:"){
-					ret->setThresholdDate(task::getRelativeDate(tmp, nullptr));
+					ret->setThresholdDate(task::getRelativeDate(tmp, QDateTime()));
 				}
 			else{
-				ret->setDueDate(task::getRelativeDate(tmp, nullptr));
+				ret->setDueDate(task::getRelativeDate(tmp, QDateTime()));
 				}
 					
 			}
@@ -512,16 +512,16 @@ QString task::toString() const
 /*
 ====================================  STATIC FUNCTIONS ========================================
 */
-QDateTime task::getRelativeDate(QString d, const QDateTime* base)
+QDateTime task::getRelativeDate(QString d, const QDateTime base)
 /* static function, returns a QDateTime object based on the "relative" and today as described in regex_reldate
 */
 {
 	QSettings settings;
 	QDateTime ret;
-	if (base == nullptr)
+	if (!base.isValid())
 	    ret = QDateTime::currentDateTime();
 	else
-		ret = *base;
+		ret = base;
 		
     QRegularExpressionMatch m = regex_reldate.match(d);
 //	qDebug()<<"task::getRelativeDate match:"<<m.captured("rdate")<<endline;

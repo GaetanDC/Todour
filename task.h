@@ -69,9 +69,9 @@ public:
 	void setProgress(int);
 
 	
-	inline QDateTime const *getDueDate() {return &dueD;};
-	inline QDateTime const *getThresholdDate() {return &thrD;};
-	inline QDateTime const *getInputDate() {return &inputD;};
+	inline QDateTime const getDueDate() {return dueD;};
+	inline QDateTime const getThresholdDate() {return thrD;};
+	inline QDateTime const getInputDate() {return inputD;};
 	inline QChar const getPriority() {return priority;};
 	inline QColor const *getColor() {return &color;};
 	inline QUuid getTuid() const{return _tuid;}
@@ -101,7 +101,7 @@ public:
 	/*returns the full QString for debugging*/
 
 // === static functions ===
-	static QDateTime getRelativeDate(QString d, const QDateTime *base = nullptr);
+	static QDateTime getRelativeDate(QString d, const QDateTime base);
 	
 	
 protected:

@@ -127,6 +127,7 @@ MainWindow::MainWindow(QWidget *parent) :
 		connect(ui->duplicateAction, SIGNAL(triggered()), this, SLOT(on_actionDuplicate()));
 		connect(ui->deleteAction, SIGNAL(triggered()), this, SLOT(on_actionDelete()));
 		connect(ui->postponeAction, SIGNAL(triggered()), this, SLOT(on_actionPostpone()));
+		connect(ui->dueTodayAction, SIGNAL(triggered()), this, SLOT(on_dueTodayAction_triggered()));		
 		connect(ui->ApriorAction,SIGNAL(triggered()),this,SLOT(on_actionPriorityA()));
 		connect(ui->BpriorAction,SIGNAL(triggered()),this,SLOT(on_actionPriorityB()));
 		connect(ui->CpriorAction,SIGNAL(triggered()),this,SLOT(on_actionPriorityC()));
@@ -893,7 +894,20 @@ void MainWindow::on_progressAction_triggered()
 	   }
 
 }
+void MainWindow::on_dueTodayAction_triggered()
+/*
+*/{
+	QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
+   if(!indexes.empty()){
+	model->startModelChange("dueToday");
+	   for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
+			model->safeDueDate(*i, QDateTime::currentDateTime());
+			}
+		model->endModelChange();		
+	   updateTitle();
+	   }
 
+}
 
 void MainWindow::handleNoteUpdate(QString txt)
 /*

@@ -59,7 +59,7 @@ private slots:
     void on_refreshButton_clicked();
     void on_pb_closeVersionBar_clicked();
     void on_progressAction_triggered();
-
+	void on_dueTodayAction_triggered();
 
     inline void on_lineEditNew_returnPressed() {on_addButton_clicked();}
     void on_lineEditFilter_returnPressed();
