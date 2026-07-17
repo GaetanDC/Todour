@@ -642,7 +642,7 @@ void MainWindow::on_addButton_clicked()
 void MainWindow::addTodo(QString &s, QString cont)
 /* 
 */{
-	model->startModelChange("add");
+	model->startModelChange();
 	_undoStack->beginMacro("addition"); //do not change this text!
 	model->safeAdd(s,cont);
 	_undoStack->endMacro();
@@ -653,7 +653,7 @@ void MainWindow::addTodo(QString &s, QString cont)
 void MainWindow::on_archiveButton_clicked()
 /* // Archive action.
 */{
-	 model->startModelChange("archive");
+	 model->startModelChange();
  	 task_set->archive();
  	 model->endModelChange();
     _undoStack->clear(); //no undo possible anymore.
@@ -728,7 +728,7 @@ void MainWindow::on_actionStay_On_Top_changed()
 void MainWindow::on_actionUndo()
 /* */{
 	if (_undoStack->undoText()=="deletion" || _undoStack->undoText()=="addition"){
-	 	model->startModelChange("deletion");
+	 	model->startModelChange();
 		_undoStack->undo();
 		model->endModelChange();
 		}
@@ -739,7 +739,7 @@ void MainWindow::on_actionUndo()
 void MainWindow::on_actionRedo()
 /* */{
 	if (_undoStack->redoText()=="deletion" || _undoStack->redoText()=="addition"){
-	 	model->startModelChange("deletion");
+	 	model->startModelChange();
 		_undoStack->redo();
 		model->endModelChange();
 		}
@@ -787,7 +787,7 @@ void MainWindow::on_actionDelete()
 		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
 			    tuidL.push_back(model->getTask(*i)->getTuid());
 	
-		model->startModelChange("deletion");
+		model->startModelChange();
 		_undoStack->beginMacro("deletion"); //do not change this text!
 		for (QList<QUuid>::iterator j=tuidL.begin();j!=tuidL.end();++j)
 				model->safeDelete(*j);
@@ -816,7 +816,7 @@ void MainWindow::on_actionDuplicate()
 */{
 	QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
 	if (! indexes.isEmpty()){
-		model->startModelChange("duplicate");
+		model->startModelChange();
  		_undoStack->beginMacro("addition"); // do not change this text
  		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
 				model->safeAdd(task_set->at(i->row()));

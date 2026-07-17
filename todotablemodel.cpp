@@ -172,21 +172,6 @@ bool TodoTableModel::setData(const QModelIndex & index, const QVariant & value, 
    return true;
 }
 
-void TodoTableModel::startModelChange(QString desc)
-/*
-*/{
-	qDebug()<<"TTM start Model Change "<<desc<<endline;
-	this->beginResetModel();
-
-}
-
-void TodoTableModel::endModelChange()
-/*
-*/{
-	this->endResetModel();
-qDebug()<<"TTM end Model Change"<<endline;
-}
-
 ////%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //Safe commands generate the action through the _undo stack
 
@@ -208,14 +193,12 @@ void TodoTableModel::safeAdd(task* _t)
 /* Safely add a task, creating an undo command
 */{
 	undoS->push(new AddCommand(tasklist,_t));
-	//emit dataChanged();
   	}
 
 void TodoTableModel::safeAdd(QString s, QString c)
 /* Safely add a task, creating an undo command
 */{
 	undoS->push(new AddCommand(tasklist,s, c));
-	//emit dataChanged();
   	}
 	 
 void TodoTableModel::safeDelete(QUuid index)
@@ -223,14 +206,12 @@ void TodoTableModel::safeDelete(QUuid index)
 */{
 //	qDebug()<<"TodoTableModel::safeDelete trying to del "<<index<<endline;
 	undoS->push(new DeleteCommand(tasklist,tasklist->getTask(index)));
-//	emit dataChanged();
 	}
 
 void TodoTableModel::safePostpone(const QModelIndex & index, QString txt)
 /* Safely postpone a task, creating an undo command
 */{
 	undoS->push(new PostponeCommand(tasklist, tasklist->at(index.row()), txt));
-	//emit dataChanged();
 	emit QAbstractItemModel::dataChanged(index.siblingAtColumn(0),index.siblingAtColumn(1));
 }
 
@@ -238,7 +219,6 @@ void TodoTableModel::safePriority(const QModelIndex & index, QChar prio)
 /* Safely change priority of a task, creating an undo command
 */{ 
 	undoS->push(new PriorityCommand(tasklist,tasklist->at(index.row()), prio));
-	//emit dataChanged();
 	emit QAbstractItemModel::dataChanged(index.siblingAtColumn(0),index.siblingAtColumn(1));
 	}
 	
@@ -246,7 +226,6 @@ void TodoTableModel::safeToggleComplete(const QModelIndex & index)
 /* Safely toggle the complete state
 */{
 	undoS->push(new CompleteCommand(tasklist, tasklist->at(index.row()), !tasklist->at(index.row())->isComplete()));
-	//emit dataChanged();
 	emit QAbstractItemModel::dataChanged(index.siblingAtColumn(0),index.siblingAtColumn(1));
 	}
 	
@@ -254,7 +233,6 @@ void TodoTableModel::safeProgress(const QModelIndex & index)
 /* Safely add 20% progress
 */{
 	undoS->push(new ProgressCommand(tasklist->at(index.row()), 20));
-	//emit dataChanged();
 	emit QAbstractItemModel::dataChanged(index.siblingAtColumn(0),index.siblingAtColumn(1));
 }
 
@@ -262,7 +240,6 @@ void TodoTableModel::safeDueDate(const QModelIndex & index, QDateTime d)
 /* safely set dueDate to d
 */{
 	undoS->push(new DueDateCommand(tasklist->at(index.row()), d));
-	//emit dataChanged();
 	emit QAbstractItemModel::dataChanged(index.siblingAtColumn(0),index.siblingAtColumn(1));
 }
 

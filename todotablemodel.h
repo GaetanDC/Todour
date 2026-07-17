@@ -45,8 +45,8 @@ public:
 //  void setFileWatch(bool b, QObject *parent);
 
 
-	void startModelChange(QString desc);
-	void endModelChange();
+	inline void startModelChange(){this->beginResetModel();};
+	inline void endModelChange(){this->endResetModel();};
 
 signals:
 
