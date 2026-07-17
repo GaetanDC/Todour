@@ -28,8 +28,10 @@ public:
 
 //for todoundo
    void addTask(task* t);
-   task* removeTask(QUuid tuid);
+   void removeTask(QUuid tuid);
+   task* getTask(QUuid tuid);
       
+
 //for mainwindow 
 	void flush();
 	void archive();

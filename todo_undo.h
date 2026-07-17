@@ -31,7 +31,7 @@ protected:
 class DeleteCommand : public QUndoCommand
 {
 public:
-    explicit DeleteCommand(taskset* _list, QUuid index, QUndoCommand *parent = nullptr);
+    explicit DeleteCommand(taskset* _list, task* t, QUndoCommand *parent = nullptr);
 	~DeleteCommand();
     void undo() override;
     void redo() override;
@@ -41,10 +41,10 @@ public:
 protected:
 	task* _task;
 	taskset* tasklist; //ref to tasklist to add / remove
- 	QUuid _tuid;
-
+	QUuid _id;
 
 };
+
 
 
 class EditCommand : public QUndoCommand

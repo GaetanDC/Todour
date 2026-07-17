@@ -501,7 +501,7 @@ void MainWindow::on_actionCopy()
     if (!indexes.isEmpty()){
     	QString text = "";
 		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-			text+=model->getTask(proxyModel->mapToSource(*i))->getEditText();
+			text+=proxyModel->data(*i,Qt::EditRole).toString();
 			text+="\n";
 			}
 		QClipboard *clipboard = QGuiApplication::clipboard();
@@ -742,6 +742,7 @@ void MainWindow::on_actionSpace()
 	for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
    	if(i->isValid())
 	   	model->safeToggleComplete(*i);
+
 	updateTitle();
    }
 }
@@ -757,12 +758,10 @@ void MainWindow::on_actionEdit()
 void MainWindow::on_actionComplete()
 /* user clicked "Complete" on a set of tasks. 
 */{
-	model->startModelChange("completion");
    QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
 	for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
 		model->safeComplete(*i,true);
 		}
-	model->endModelChange();		
    updateTitle();
 }
 
@@ -770,18 +769,18 @@ void MainWindow::on_actionDelete()
 /* User clicked on "Delete". We remove the selected items
 */{
     QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
+
     QList<QUuid> tuidL;
 	if (!indexes.isEmpty()){
 		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
 		    tuidL.push_back(model->getTask(*i)->getTuid());
 		}
 
-	model->startModelChange("deletion");
+		model->startModelChange("deletion");
 		for (QList<QUuid>::iterator j=tuidL.begin();j!=tuidL.end();++j){
 			model->safeDelete(*j);
 		}
-		
-	model->endModelChange();		
+		model->endModelChange();		
     	updateTitle();
     }
 }
@@ -792,12 +791,9 @@ void MainWindow::on_actionPostpone()
 */{
     QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
     if(!indexes.empty()){
-	model->startModelChange("postpone");
-		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-			model->safePostpone(*i,"t:+10d");
-		}
-	model->endModelChange();		
-	    updateTitle();
+		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
+				model->safePostpone(*i,"t:+10d");
+	 updateTitle();
     }
 }
 
@@ -821,13 +817,10 @@ void MainWindow::on_actionPriority(QChar p)
 */{
    QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
     if(!indexes.empty()){
-	model->startModelChange("completion");
-	   for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-			model->safePriority(*i, p);
-			}
-		model->endModelChange();		
+	   for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
+				model->safePriority(*i, p);
 	   updateTitle();
-	   }
+	 }
 }
 
 /* show "alarm" of new version available (status bar? Notification? balloon tooltip?)
@@ -885,11 +878,8 @@ void MainWindow::on_progressAction_triggered()
 */{
 	QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
    if(!indexes.empty()){
-	model->startModelChange("progress");
-	   for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-			model->safeProgress(*i);
-			}
-		model->endModelChange();		
+	   for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
+				model->safeProgress(*i);
 	   updateTitle();
 	   }
 
@@ -899,11 +889,8 @@ void MainWindow::on_dueTodayAction_triggered()
 */{
 	QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
    if(!indexes.empty()){
-	model->startModelChange("dueToday");
-	   for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-			model->safeDueDate(*i, QDateTime::currentDateTime());
-			}
-		model->endModelChange();		
+	   for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
+				model->safeDueDate(*i, QDateTime::currentDateTime());
 	   updateTitle();
 	   }
 
@@ -915,6 +902,3 @@ void MainWindow::handleNoteUpdate(QString txt)
 */{
 	ui->noteView->setPlainText(txt);
 }
-
-
-

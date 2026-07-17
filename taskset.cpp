@@ -34,21 +34,31 @@ void taskset::addTask(task* _t)
   	if (_t!=nullptr) content.push_back(_t);    
 }
 
-task* taskset::removeTask(QUuid tuid)
-/* Remove the task, don't delete object
+task* taskset::getTask(QUuid tuid)
+/*
 */{
-	Q_UNUSED(tuid);
-	//	qDebug()<<"TodoTableModel::removeTask "<<tuid<<endline;
 	task* ret = nullptr;
 	for (vector<task*>::iterator i=content.begin();i!=content.end();++i){
 		if ((*i)->getTuid() == tuid){
-//			qDebug()<<"   found task: "<<(*i)->toString()<<endline;
 			ret= *i;
-			content.erase(i);
+//			qDebug()<<"taskset::getTask found: "<<ret->getDisplayText()<<endline;
 			return ret;
 		}
 	}
 	return nullptr;
+
+}
+
+void taskset::removeTask(QUuid tuid)
+/* Remove the task, don't delete object
+*/{
+	for (vector<task*>::iterator i=content.begin();i!=content.end();++i){
+		if ((*i)->getTuid() == tuid){
+//		   	qDebug()<<"taskset::removeTask found: "<<(*i)->getDisplayText()<<endline;
+				content.erase(i);
+				return;
+				}
+	}
 }
 
 void taskset::flush()

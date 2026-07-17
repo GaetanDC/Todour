@@ -37,16 +37,16 @@ return false;}
 
 // §§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§
 
-DeleteCommand::DeleteCommand(taskset* _list, QUuid index, QUndoCommand *parent)
-    : QUndoCommand(parent),  tasklist(_list),_tuid(index) 
-/*	_task = is initialised in the redo */
+DeleteCommand::DeleteCommand(taskset* _list, task* t, QUndoCommand *parent)
+    : QUndoCommand(parent), _task(t), tasklist(_list)
 {
 	setText("Delete");
 }
 
 DeleteCommand::~DeleteCommand()
 /* */
-{}
+{
+}
 
 void DeleteCommand::undo()
 /* UNDO DELETE means we have to add a task in the list.
@@ -58,8 +58,7 @@ void DeleteCommand::undo()
 void DeleteCommand::redo()
 /* */
 {
-	// as far as I know, <vector> doesn't actually delete the object.
-	_task = tasklist->removeTask(_tuid);
+	tasklist->removeTask(_task->getTuid());
 }
 
 int DeleteCommand::id() const
