@@ -8,7 +8,7 @@
 #include "aboutbox.h"
 #include "def.h"
 
-//#include "todo_undo.h"
+#include "todo_undo.h"
 
 #include <QTime>
 #include <QDebug>

@@ -33,7 +33,7 @@ static QRegularExpression regex_todo_line("((^(?:x )+("+DATE_PAT+"(?:\\s+|$))?)+
 
 static QRegularExpression regex_context("(?:\\s+)((\\@[^\\s]+)|(\\+[^\\s]+))(?#\\s+|$)");
 
-static QRegularExpression regex_progress("(?:\\s+\\#(?<p>\\d\\d)\\%)(?#\\s+|$)");
+static QRegularExpression regex_progress("\\s+(?:\\#(?<p>\\d\\d)\\%)(?#\\s+|$)");
 
 
 
@@ -340,9 +340,11 @@ void task::setProgress(int _prog)
 */{
 	progress = _prog;
 	_raw.remove(regex_progress);
-	_raw.append(" #");
-	_raw.append(QString::number(_prog));
-	_raw.append("%");
+	if (_prog != 0){
+		_raw.append(" #");
+		_raw.append(QString::number(_prog));
+		_raw.append("%");
+		}
 	this->updateDisplayText();
 }
 
