@@ -201,7 +201,10 @@ MainWindow::MainWindow(QWidget *parent) :
     //ui->btn_Alphabetical->setChecked(settings.value(SETTINGS_SORT_ALPHA).toBool());
     QObject::connect(model,SIGNAL(dataChanged (const QModelIndex , const QModelIndex )), this, 
     		SLOT(dataInModelChanged(QModelIndex,QModelIndex)));
-    connect(model,SIGNAL(dataChanged()),this,SLOT(HandleDataChange()));
+
+    QObject::connect(model,SIGNAL(dataChanged (const QModelIndex , const QModelIndex )),
+    		proxyModel, SIGNAL(dataChanged (const QModelIndex , const QModelIndex )));
+
 
    ui->lineEditFilter->setText(settings.value(SETTINGS_SEARCH_STRING,DEFAULT_SEARCH_STRING).toString());
 
@@ -639,9 +642,10 @@ void MainWindow::on_addButton_clicked()
 void MainWindow::addTodo(QString &s, QString cont)
 /* 
 */{
-	task* t = new task(s,cont);
 	model->startModelChange("add");
-	model->safeAdd(t);
+	_undoStack->beginMacro("addition"); //do not change this text!
+	model->safeAdd(s,cont);
+	_undoStack->endMacro();
 	model->endModelChange();
    updateTitle();
 }
@@ -649,7 +653,6 @@ void MainWindow::addTodo(QString &s, QString cont)
 void MainWindow::on_archiveButton_clicked()
 /* // Archive action.
 */{
-//TODO: refresh the view
 	 model->startModelChange("archive");
  	 task_set->archive();
  	 model->endModelChange();
@@ -724,15 +727,23 @@ void MainWindow::on_actionStay_On_Top_changed()
 
 void MainWindow::on_actionUndo()
 /* */{
-	_undoStack->undo();
-	model->refresh();
+	if (_undoStack->undoText()=="deletion" || _undoStack->undoText()=="addition"){
+	 	model->startModelChange("deletion");
+		_undoStack->undo();
+		model->endModelChange();
+		}
+	else _undoStack->undo();
 	updateTitle();
 }
 
 void MainWindow::on_actionRedo()
 /* */{
-	_undoStack->redo();
-	model->refresh();
+	if (_undoStack->redoText()=="deletion" || _undoStack->redoText()=="addition"){
+	 	model->startModelChange("deletion");
+		_undoStack->redo();
+		model->endModelChange();
+		}
+	else _undoStack->redo();
 	updateTitle();
 }
 
@@ -759,9 +770,10 @@ void MainWindow::on_actionComplete()
 /* user clicked "Complete" on a set of tasks. 
 */{
    QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
-	for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-		model->safeComplete(*i,true);
-		}
+	_undoStack->beginMacro("Complete");
+	for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
+			model->safeComplete(*i,true);
+	_undoStack->endMacro(); 
    updateTitle();
 }
 
@@ -772,14 +784,14 @@ void MainWindow::on_actionDelete()
 
     QList<QUuid> tuidL;
 	if (!indexes.isEmpty()){
-		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-		    tuidL.push_back(model->getTask(*i)->getTuid());
-		}
-
+		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
+			    tuidL.push_back(model->getTask(*i)->getTuid());
+	
 		model->startModelChange("deletion");
-		for (QList<QUuid>::iterator j=tuidL.begin();j!=tuidL.end();++j){
-			model->safeDelete(*j);
-		}
+		_undoStack->beginMacro("deletion"); //do not change this text!
+		for (QList<QUuid>::iterator j=tuidL.begin();j!=tuidL.end();++j)
+				model->safeDelete(*j);
+		_undoStack->endMacro(); 
 		model->endModelChange();		
     	updateTitle();
     }
@@ -791,8 +803,10 @@ void MainWindow::on_actionPostpone()
 */{
     QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
     if(!indexes.empty()){
+  		_undoStack->beginMacro("postpone");
 		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
 				model->safePostpone(*i,"t:+10d");
+		_undoStack->endMacro(); 
 	 updateTitle();
     }
 }
@@ -802,10 +816,11 @@ void MainWindow::on_actionDuplicate()
 */{
 	QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
 	if (! indexes.isEmpty()){
-	model->startModelChange("duplicate");
-		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-			model->safeAdd(new task(task_set->at(i->row())));
-		}
+		model->startModelChange("duplicate");
+ 		_undoStack->beginMacro("addition"); // do not change this text
+ 		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
+				model->safeAdd(task_set->at(i->row()));
+		_undoStack->endMacro(); 
 		model->endModelChange();		
 		updateTitle();
 	}
@@ -817,8 +832,10 @@ void MainWindow::on_actionPriority(QChar p)
 */{
    QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
     if(!indexes.empty()){
+  		_undoStack->beginMacro("priority");
 	   for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
 				model->safePriority(*i, p);
+		_undoStack->endMacro(); 
 	   updateTitle();
 	 }
 }
@@ -858,13 +875,6 @@ void MainWindow::on_actionPrint_triggered()
 		text.setHtml(txt_str);
 		text.print(&printer);
 	}
-}
-
-void MainWindow::HandleDataChange()
-/* Model data has changed, we got the signal.
-- updateTitle
-*/{
-	updateTitle();
 }
 
 void MainWindow::on_actionSync_triggered()

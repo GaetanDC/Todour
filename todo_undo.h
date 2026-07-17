@@ -15,6 +15,8 @@ class AddCommand : public QUndoCommand
 {
 public:
     explicit AddCommand(taskset* _list, task* _t, QUndoCommand *parent = nullptr);
+    explicit AddCommand(taskset* _list, QString q, QString c, QUndoCommand *parent = nullptr);
+
     ~AddCommand();
 
     void undo() override;

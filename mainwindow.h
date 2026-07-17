@@ -37,10 +37,7 @@ public slots:
     void handleNoteUpdate(QString txt);
     
 private slots:
-    void updateSettings();
-    
-    void HandleDataChange();
-    
+    void updateSettings();   
     void on_lineEditFilter_textEdited(const QString &arg1);
 
     void on_actionSettings_triggered();

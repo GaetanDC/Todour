@@ -15,8 +15,8 @@ protected:
 public:
     explicit TodoTableModel(taskset* _tasklist,QUndoStack* _undo, QObject *parent = 0);
     ~TodoTableModel();
-    int rowCount(const QModelIndex &parent) const;
-    int columnCount(const QModelIndex &parent) const;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const;
 
     QVariant data(const QModelIndex &index, int role) const;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
@@ -32,6 +32,7 @@ public:
 	 void safeComplete(const QModelIndex & index, bool state);
 	 void safeEdit(const QModelIndex & index, QString _raw);
     void safeAdd(task* _t);
+    void safeAdd(QString s, QString c="");
     void safeDelete(QUuid index);
     void safePostpone(const QModelIndex & index, QString txt);
     void safePriority(const QModelIndex & index, QChar prio);
@@ -48,7 +49,7 @@ public:
 	void endModelChange();
 
 signals:
-	void dataChanged();
+
 public slots:	
 private:
 	QUndoStack* undoS;

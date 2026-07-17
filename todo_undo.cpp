@@ -3,10 +3,19 @@
 #include <QDebug>
 
 AddCommand::AddCommand(taskset* _list, task* _t, QUndoCommand *parent)
-    : QUndoCommand(parent),  _task(_t),tasklist(_list)
+    : QUndoCommand(parent), tasklist(_list)
 /* */
 {
 	setText("New task");
+	_task = new task(_t);
+}
+
+AddCommand::AddCommand(taskset* _list, QString s, QString c, QUndoCommand *parent)
+    : QUndoCommand(parent),tasklist(_list)
+/* */
+{
+	setText("New task");
+	_task=new task(s,c);
 }
 
 AddCommand::~AddCommand()
