@@ -172,6 +172,14 @@ bool TodoTableModel::setData(const QModelIndex & index, const QVariant & value, 
    return true;
 }
 
+void TodoTableModel::dataChanged(QModelIndex index)
+/*
+*/{
+	emit QAbstractItemModel::dataChanged(index.siblingAtColumn(0),index.siblingAtColumn(1));
+}
+
+
+
 ////%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //Safe commands generate the action through the _undo stack
 

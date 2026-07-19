@@ -50,7 +50,8 @@ public:
 
 signals:
 
-public slots:	
+public slots:
+	void dataChanged(QModelIndex index);
 private:
 	QUndoStack* undoS;
 
