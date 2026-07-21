@@ -35,6 +35,7 @@ enum iTaskFilterMode{
 	HideThreshold=0x2,
 	DueAsThreshold=0x4,
 	ContextThreshold=0x8,
+	DateThreshold=0x10,
 	ShowInactive=0x80
 	};
 Q_DECLARE_FLAGS(TodourFilterMode, iTaskFilterMode)
@@ -45,18 +46,15 @@ Q_DECLARE_FLAGS(TodourFilterMode, iTaskFilterMode)
   public slots:
 	inline TodourSortMode getSortMode() const{return actual_sort;};
 	void setSortMode(TodourSortMode mode);
-	
-//	QString getTaksNum();
-	
+		
 	inline TodourFilterMode getFilterMode() const{return actual_filter;};
 	void setFilterMode(TodourFilterMode mode);
-
+	void addFilterMode(TodourFilterMode mode);
+	
 	inline QStringList getContexts()const {return contexts;};
 	void setContexts(QStringList newc);	
-	
-	
+		
 	void updateFilterText(QString filter);
-//	void updateFilterLevel(eTaskCriticity filt=Todour_NoFilter);
   	
   private:
   	QRegularExpression filterText;
@@ -65,7 +63,8 @@ Q_DECLARE_FLAGS(TodourFilterMode, iTaskFilterMode)
   	
   	QStringList contexts;
   	
-  	
+  	bool filterTextHasProject;
+  	QDateTime dueWarningDate;
   	signals:
 };
 

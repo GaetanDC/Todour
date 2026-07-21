@@ -234,7 +234,7 @@ void MainWindow::updateSettings()
 It is intended to be run at startup, and at closing of settings dialog.
 It should be safe to run it at any time.
 */{
-QSettings settings;
+	QSettings settings;
       // Set some defaults if they dont exist
     if(!settings.contains(SETTINGS_LIVE_SEARCH))
         		settings.setValue(SETTINGS_LIVE_SEARCH,DEFAULT_LIVE_SEARCH);
@@ -246,24 +246,28 @@ QSettings settings;
     ui->actionStay_On_Top->setChecked(settings.value(SETTINGS_STAY_ON_TOP,DEFAULT_STAY_ON_TOP).toBool());
     setTray();
     stayOnTop();
-       
+   
 	//set font size
-    int size = settings.value(SETTINGS_FONT_SIZE).toInt();
-    if(size >0){
-        auto f = qApp->font();
-        f.setPointSize(size);
-        qApp->setFont(f);
-    }
+    auto f = qApp->font();
+    f.setPointSize(settings.value(SETTINGS_FONT_SIZE,DEFAULT_FONT_SIZE).toInt());
+    qApp->setFont(f);
+    
    task_set->setFileWatch(settings.value(SETTINGS_AUTOREFRESH).toBool(),(QObject*) this);
 	task_set->recalculate();
 
 	proxyModel->setContexts(task_set->getContexts());
+			
 	ui->respectThresholdAction->setChecked(settings.value(SETTINGS_THRESHOLD_INACTIVE,DEFAULT_THRESHOLD_INACTIVE).toBool());
 	ui->thresholdDueAction->setChecked(settings.value(	SETTINGS_DUE_AS_THRESHOLD,DEFAULT_DUE_AS_THRESHOLD).toBool());
 	ui->showInactiveAction->setChecked(settings.value(	SETTINGS_HIDE_INACTIVE,DEFAULT_HIDE_INACTIVE).toBool());
 
 	
 	todoProxyModel::TodourFilterMode newfval = todoProxyModel::NoFilter;	
+	if(settings.value(SETTINGS_THRESHOLD_LABELS, DEFAULT_THRESHOLD_LABELS).toBool())
+			newfval |= todoProxyModel::ContextThreshold;
+	if(settings.value(SETTINGS_THRESHOLD, DEFAULT_THRESHOLD).toBool())
+			newfval |= todoProxyModel::DateThreshold;
+
 	if (ui->todaysViewAction->isChecked())	newfval |= todoProxyModel::TodaysView;
 	if (ui->respectThresholdAction->isChecked())	newfval |= todoProxyModel::HideThreshold;
 	if (ui->thresholdDueAction->isChecked())	newfval |= todoProxyModel::DueAsThreshold;
@@ -804,7 +808,7 @@ void MainWindow::on_actionPostpone()
 */{
     QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
     if(!indexes.empty()){
-  		_undoStack->beginMacro("postpone");
+  		_undoStack->beginMacro(tr("postpone"));
 		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
 				model->safePostpone(*i,"t:+10d");
 		_undoStack->endMacro(); 

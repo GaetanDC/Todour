@@ -14,6 +14,7 @@ todoProxyModel::todoProxyModel(QObject *parent)
 	this->setFilterKeyColumn(1);
    filterText.setPattern("(?=^.*$)");
    filterText.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
+   filterTextHasProject = false;
    this->setFilterRegularExpression(filterText);
    setDynamicSortFilter(false);
 }
@@ -61,15 +62,20 @@ We filter based on
 - the "treat due as threshold" ?
 - the "today's view". We should be getting a score from (??) 
 */{
- //QModelIndex index0 = sourceModel()->index(sourceRow, 0, sourceParent);
 	QModelIndex source_index = sourceModel()->index(sourceRow, 1, sourceParent);
-	if (!(actual_filter.testFlag(todoProxyModel::ShowInactive)))
+	if (filterTextHasProject){//the filtertext contains a project (+...)
+		return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
+		}
+	if ((!actual_filter.testFlag(todoProxyModel::ShowInactive)) ||
+				actual_filter.testFlag(todoProxyModel::TodaysView))
 		if (!sourceModel()->data(source_index,Qt::UserRole+2).toBool()) return false;
 	
-	if (actual_filter.testFlag(todoProxyModel::HideThreshold)){
-		if (sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())
-			return false;
-		
+	if (actual_filter.testFlag(todoProxyModel::HideThreshold)||
+				actual_filter.testFlag(todoProxyModel::TodaysView)) {
+		if (actual_filter.testFlag(todoProxyModel::DateThreshold)){
+			if (sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())
+					return false;	
+			}
 		if (actual_filter.testFlag(todoProxyModel::ContextThreshold)){
 				for (QString i:contexts){
 					if(sourceModel()->data(source_index,Qt::DisplayRole).toString().contains("t:"+i)){
@@ -78,22 +84,23 @@ We filter based on
 					}
 			}
 		if (actual_filter.testFlag(todoProxyModel::DueAsThreshold)){
-			if (sourceModel()->data(source_index,Qt::UserRole+4).toDateTime()>QDateTime::currentDateTime()) return false;
+			if (sourceModel()->data(source_index,Qt::UserRole+4).toDateTime()>dueWarningDate)
+					return false;
 			}
 		}
 		
 	if (actual_filter.testFlag(todoProxyModel::TodaysView)){
 	// hide inactive, threshold, D-priority, context-threshold, complete
-		if (sourceModel()->data(source_index,Qt::UserRole+7) == Qt::Checked) return false;
-		if (!sourceModel()->data(source_index,Qt::UserRole+2).toBool()) return false;
-		if (sourceModel()->data(source_index,Qt::UserRole+6).toChar()>'C')	return false;
-		if (sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())	return false;
+		if (sourceModel()->data(source_index,Qt::UserRole+7) == Qt::Checked) return false; // Checked
+//		if (!sourceModel()->data(source_index,Qt::UserRole+2).toBool()) return false; // is Active
+		if (sourceModel()->data(source_index,Qt::UserRole+6).toChar()>'C')	return false; // Priority
+//		if (sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())	return false; // Threshold date
 		
-		for (QString i:contexts){
-					if(sourceModel()->data(source_index,Qt::DisplayRole).toString().contains("t:"+i)){
-							qDebug()<<"proxymodel::filteracceptrow: rejecting because "<<i<<endline;
-							return false;}
-					}
+//		for (QString i:contexts){
+//					if(sourceModel()->data(source_index,Qt::DisplayRole).toString().contains("t:"+i)){
+//							qDebug()<<"proxymodel::filteracceptrow: rejecting because "<<i<<endline;
+//							return false;}
+//					}
 	}
 
 	
@@ -115,24 +122,33 @@ void todoProxyModel::setSortMode(TodourSortMode mode)
 void todoProxyModel::setFilterMode(TodourFilterMode mode)
 /*
 */{
-	beginFilterChange();
+//	qDebug()<<"setFilterMode: actual_filter="<<actual_filter<<endline;
+
 	actual_filter=mode;
-	qDebug()<<"setFilterMode: actual_filter="<<actual_filter<<endline;
+
+	QSettings settings;	
+	beginFilterChange();
+	dueWarningDate=QDateTime::currentDateTime().addDays(-settings.value(SETTINGS_DUE_WARNING,DEFAULT_DUE_WARNING).toInt());
 
    endFilterChange(QSortFilterProxyModel::Direction::Rows);
 	this->invalidate();
 	this->sort(1,Qt::AscendingOrder);
-
-
 }
+
+void todoProxyModel::addFilterMode(TodourFilterMode mode)
+/*TODO: this needs some check for incompatible modes, if any.
+*/{
+	actual_filter |= mode;
+}
+
 
 void todoProxyModel::setContexts(QStringList newc)
 /*
 */{
-	beginFilterChange();
+//	beginFilterChange();
 	this->contexts = newc;
-   endFilterChange(QSortFilterProxyModel::Direction::Rows);
-
+//   endFilterChange(QSortFilterProxyModel::Direction::Rows);
+	this->invalidate();
 }
 
 
@@ -141,6 +157,7 @@ void todoProxyModel::updateFilterText(QString filter)
 	We need to adapt.
 */{
 	QSettings settings;    
+  	filterTextHasProject = false;
    
 //	qDebug()<<"todoProxyModel::updateFilterText  previous filter="<<this->filterRegularExpression()<<endline;
 		
@@ -154,6 +171,7 @@ void todoProxyModel::updateFilterText(QString filter)
     #define STARTN "(?!^.*"
     for(QString word:words){
         if(word.length()==0) break;
+  			filterTextHasProject |= contexts.contains(word);
 
         if(word.at(0)==search_not_char){
         		regexpstring.append(STARTN);
@@ -164,16 +182,12 @@ void todoProxyModel::updateFilterText(QString filter)
     	}
     }
    this->filterText.setPattern(regexpstring);	
+//  	filterTextHasProject = filter.contains(QRegularExpression("(?:^|\\s+)\\+\\w*(?:\\s+|$)"));
+  	
+//  		qDebug()<<"todoProxyModel::updateFilterText: filterTextHasProject: "<<filterTextHasProject<<endline;
+//  		qDebug()<<"   filter="<<filter<<endline;
 	beginFilterChange();	
 	
    this->setFilterRegularExpression(this->filterText);
    endFilterChange(QSortFilterProxyModel::Direction::Rows);
-    
-//	qDebug()<<"todoProxyModel::updateFilterText new filter="<<this->filterRegularExpression()<<endline;
-
-//we use the basis class to filter based on text.
-
-    
 }
-
-
