@@ -178,6 +178,7 @@ MainWindow::MainWindow(QWidget *parent) :
    ui->tableView->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
    ui->tableView->resizeColumnToContents(0); // Checkboxes kept small
 
+	connect(model,SIGNAL(dataChanged(QModelIndex, QModelIndex)),proxyModel,SLOT(invalidate()));
 	note_set = new noteset(this);
 	connect(note_set,SIGNAL(updateText(QString)),this,SLOT(handleNoteUpdate(QString)));
 	note_set->reLoad();	
