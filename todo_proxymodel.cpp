@@ -79,7 +79,7 @@ We filter based on
 		if (actual_filter.testFlag(todoProxyModel::ContextThreshold)){
 				for (QString i:contexts){
 					if(sourceModel()->data(source_index,Qt::DisplayRole).toString().contains("t:"+i)){
-							qDebug()<<"proxymodel::filteracceptrow: rejecting because "<<i<<endline;
+//							qDebug()<<"proxymodel::filteracceptrow: rejecting because "<<i<<endline;
 							return false;}
 					}
 			}

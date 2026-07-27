@@ -38,8 +38,10 @@ public slots:
     
 private slots:
     void updateSettings();   
-    void on_lineEditFilter_textEdited(const QString &arg1);
-
+//    void on_lineEditFilter_textEdited(const QString &arg1);
+    void on_lineEditFilter_currentTextChanged(const QString &arg1);
+    inline void on_lineEditNew_returnPressed() {on_addButton_clicked();}
+    
     void on_actionSettings_triggered();
     void on_actionAbout_triggered();
     void on_actionPrint_triggered();
@@ -56,9 +58,8 @@ private slots:
     void on_refreshButton_clicked();
     void on_pb_closeVersionBar_clicked();
     void on_progressAction_triggered();
-	void on_dueTodayAction_triggered();
+	 void on_dueTodayAction_triggered();
 
-    inline void on_lineEditNew_returnPressed() {on_addButton_clicked();}
     void on_lineEditFilter_returnPressed();
 
     void on_hotkey();

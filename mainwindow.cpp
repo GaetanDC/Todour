@@ -118,6 +118,8 @@ MainWindow::MainWindow(QWidget *parent) :
     auto findshortcut = new QShortcut(QKeySequence(tr("Ctrl+f")),this);
     QObject::connect(findshortcut,SIGNAL(activated()),ui->lineEditFilter,SLOT(setFocus()));
     auto findshortcut2 = new QShortcut(QKeySequence(tr("F3")),this);
+    ui->lineEditFilter->setPlaceholderText(tr("Search (F3)"));
+    
     QObject::connect(findshortcut2,SIGNAL(activated()),ui->lineEditFilter,SLOT(setFocus()));
     auto switchshortcut = new QShortcut(QKeySequence(tr("F6")),this);
     QObject::connect(switchshortcut,SIGNAL(activated()),this, SLOT(toggleFocus()));
@@ -195,7 +197,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	//	wordList << "alpha" << "omega" << "omicron" << "zeta";
 	//	_taglist = new QCompleter(wordList, this);
 	//	_taglist->setCaseSensitivity(Qt::CaseInsensitive);
-	//	ui->lineEditFilter->setCompleter(_taglist);
 
 
     // Do this late as it triggers action using data
@@ -207,7 +208,7 @@ MainWindow::MainWindow(QWidget *parent) :
     		proxyModel, SIGNAL(dataChanged (const QModelIndex , const QModelIndex )));
 
 
-   ui->lineEditFilter->setText(settings.value(SETTINGS_SEARCH_STRING,DEFAULT_SEARCH_STRING).toString());
+//   ui->lineEditFilter->setText(settings.value(SETTINGS_SEARCH_STRING,DEFAULT_SEARCH_STRING).toString());
 
 	on_actionSortAZ();
 
@@ -253,9 +254,9 @@ It should be safe to run it at any time.
     qApp->setFont(f);
     
    task_set->setFileWatch(settings.value(SETTINGS_AUTOREFRESH).toBool(),(QObject*) this);
-	task_set->recalculate();
+//	task_set->recalculate();
 
-	proxyModel->setContexts(task_set->getContexts());
+//	proxyModel->setContexts(task_set->getContexts());
 			
 	ui->respectThresholdAction->setChecked(settings.value(SETTINGS_THRESHOLD_INACTIVE,DEFAULT_THRESHOLD_INACTIVE).toBool());
 	ui->thresholdDueAction->setChecked(settings.value(	SETTINGS_DUE_AS_THRESHOLD,DEFAULT_DUE_AS_THRESHOLD).toBool());
@@ -285,9 +286,10 @@ It should be safe to run it at any time.
 	if (ui->sortDateAction->isChecked()) newsval |= todoProxyModel::sort_idate;
 	if (ui->sortInactiveAction->isChecked()) newsval |= todoProxyModel::inactive_last;
 	
+	
 	proxyModel->setSortMode(newsval);
-    model->refresh();
-
+   model->refresh();
+	this->dataInModelChanged(QModelIndex(),QModelIndex());
 	updateTitle();
 	qDebug()<<"Mainwindow: finished update settings"<<endline;
 	}
@@ -302,6 +304,12 @@ We need to update the title + recalculate the tasks active.
     Q_UNUSED(i1)
     
 	task_set->recalculate();
+	proxyModel->setContexts(task_set->getContexts());
+	
+	//TODO: create a system to identify the change of context at lower level. Only update if changed.
+	ui->lineEditFilter->clear();
+	ui->lineEditFilter->addItem("");
+	ui->lineEditFilter->addItems(task_set->getContexts());
 	updateTitle();  
 	}
 
@@ -363,7 +371,8 @@ void MainWindow::setHotkey(){
 	}
 
 
-void MainWindow::on_lineEditFilter_textEdited(const QString &arg1)
+//void MainWindow::on_lineEditFilter_textEdited(const QString &arg1)
+void MainWindow::on_lineEditFilter_currentTextChanged(const QString &arg1)
 /* User edited the "filter" field. If liveupdate settings is activates, we have to inform the Proxymodel of the change
 */{
 	QSettings settings;
@@ -378,7 +387,7 @@ void MainWindow::on_lineEditFilter_returnPressed()
 */{
 	QSettings settings;
     if(!settings.value(SETTINGS_LIVE_SEARCH,DEFAULT_LIVE_SEARCH).toBool()){
-        proxyModel->updateFilterText(ui->lineEditFilter->text());
+        proxyModel->updateFilterText(ui->lineEditFilter->currentText());
     }
 }
 
@@ -623,7 +632,7 @@ void MainWindow::on_addButton_clicked()
         QChar not_char=QChar::Null;
         QString sett = settings.value(SETTINGS_SEARCH_NOT_CHAR,DEFAULT_SEARCH_NOT_CHAR).toString();
         if (sett.size()>0) sett.at(0);
-        QStringList contexts = ui->lineEditFilter->text().split(QRegularExpression("\\s"));
+        QStringList contexts = ui->lineEditFilter->currentText().split(QRegularExpression("\\s"));
         for(QString c:contexts){
          if(c.length()>0 && c.at(0)==not_char) continue; // ignore this one
          if(!context.contains(c,Qt::CaseInsensitive)){
@@ -690,7 +699,7 @@ void MainWindow::cleanup()
    settings.setValue( SETTINGS_GEOMETRY, saveGeometry() );
    settings.setValue( SETTINGS_SAVESTATE, saveState() );
    settings.setValue( SETTINGS_MAXIMIZED, isMaximized() );
-   settings.setValue(SETTINGS_SEARCH_STRING,ui->lineEditFilter->text());
+//   settings.setValue(SETTINGS_SEARCH_STRING,ui->lineEditFilter->text());
   	settings.setValue("splitterSizes", ui->split->saveState());
 
    if(trayicon!=NULL){

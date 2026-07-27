@@ -17,7 +17,7 @@
 #define DEFAULT_HOTKEY_ENABLE false
 #define DEFAULT_SHOW_DATES false
 #define DEFAULT_DELETED_FILE false
-#define DEFAULT_SEARCH_STRING ""
+//#define DEFAULT_SEARCH_STRING ""
 #define DEFAULT_THRESHOLD false
 #define DEFAULT_THRESHOLD_LABELS false
 #define DEFAULT_THRESHOLD_INACTIVE false
@@ -65,7 +65,7 @@
 #define SETTINGS_HOTKEY_ENABLE "hotkey_enable"
 #define SETTINGS_SHOW_DATES "show_dates"
 #define SETTINGS_DELETED_FILE "deleted_file"
-#define SETTINGS_SEARCH_STRING "search_string"
+//#define SETTINGS_SEARCH_STRING "search_string"
 #define SETTINGS_THRESHOLD "threshold"
 #define SETTINGS_THRESHOLD_LABELS "threshold_labels"
 #define SETTINGS_THRESHOLD_INACTIVE "threshold_inactive"
