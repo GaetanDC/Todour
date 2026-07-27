@@ -260,16 +260,9 @@
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="cb_threshold">
+        <widget class="QCheckBox" name="cb_enhancedPM">
          <property name="text">
-          <string>Respect threshold dates (t:xxxx-xx-xx)</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="cb_threshold_label">
-         <property name="text">
-          <string>Respect threshold contexts and projecs (t:+project or t:@context)</string>
+          <string>Enhanced Project Management (hide all +project)</string>
          </property>
         </widget>
        </item>
