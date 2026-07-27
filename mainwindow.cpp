@@ -867,28 +867,34 @@ void MainWindow::new_version(QString text)
 }
 
 void MainWindow::on_actionPrint_triggered()
-/* The user has clicked on "Print". We print the selected tasks
+/* The user has clicked on "Print". We print the selected tasks. If none is selected, print visible.
 #TODO: consider printing the notes...
 */{
-    auto selection = ui->tableView->selectionModel();
-    if(selection->hasSelection()){
-		QPrinter printer;
-		
-		QPrintDialog dialog(&printer, this);
-		dialog.setWindowTitle(tr("Print Tasks"));
-		if (dialog.exec() != QDialog::Accepted)
-			return;
-		QString txt_str;
-		QModelIndexList list=selection->selection().indexes();
-		for (QList<QModelIndex>::iterator i=list.begin(); i!=list.end();++i)
-		{
-			txt_str=txt_str + "<br>";
-			txt_str=txt_str+i->data(Qt::DisplayRole).toString();
+   auto selection = ui->tableView->selectionModel();
+	QPrinter printer;
+	QPrintDialog dialog(&printer, this);
+	dialog.setWindowTitle(tr("Print Tasks"));
+	if (dialog.exec() != QDialog::Accepted)
+		return;
+	QString txt_str;
+	QModelIndexList list;
+	if(selection->hasSelection())
+			list=selection->selection().indexes();
+	else {
+		int rowCount = proxyModel->rowCount();
+		list.reserve(rowCount);
+		for (int row=0; row<rowCount;row++) list.append(proxyModel->index(row,1));
 		}
-		QTextDocument text(this);
-		text.setHtml(txt_str);
-		text.print(&printer);
+	
+	for (QList<QModelIndex>::iterator i=list.begin(); i!=list.end();++i)
+	{
+		txt_str=txt_str + "<br>";
+		txt_str=txt_str+i->data(Qt::DisplayRole).toString();
 	}
+	QTextDocument text(this);
+	text.setHtml(txt_str);
+	text.print(&printer);
+	
 }
 
 void MainWindow::on_actionSync_triggered()
