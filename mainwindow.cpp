@@ -288,9 +288,7 @@ It should be safe to run it at any time.
 	
 	
 	proxyModel->setSortMode(newsval);
-   model->refresh();
 	this->dataInModelChanged(QModelIndex(),QModelIndex());
-	updateTitle();
 	qDebug()<<"Mainwindow: finished update settings"<<endline;
 	}
 
@@ -310,6 +308,8 @@ We need to update the title + recalculate the tasks active.
 	ui->lineEditFilter->clear();
 	ui->lineEditFilter->addItem("");
 	ui->lineEditFilter->addItems(task_set->getContexts());
+	proxyModel->refresh();
+	
 	updateTitle();  
 	}
 

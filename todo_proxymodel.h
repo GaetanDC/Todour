@@ -6,12 +6,7 @@
 #include "def.h"
 #include "taskset.h"
 
-
 using namespace std;
-
-
-
-
 
 class todoProxyModel : public QSortFilterProxyModel
 {
@@ -44,6 +39,7 @@ Q_DECLARE_FLAGS(TodourFilterMode, iTaskFilterMode)
 	virtual bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
 	
   public slots:
+   void refresh();
 	inline TodourSortMode getSortMode() const{return actual_sort;};
 	void setSortMode(TodourSortMode mode);
 		

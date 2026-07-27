@@ -108,14 +108,19 @@ We filter based on
 
 }
 
+void todoProxyModel::refresh()
+/* Ensure the filtering and sorting are updated
+*/{
+	this->invalidate();  //filter
+	this->sort(1,Qt::AscendingOrder); //sorting
+}
+
+
 void todoProxyModel::setSortMode(TodourSortMode mode)
 /* 
 */{
-	this->invalidate();
 	actual_sort = mode;
-	qDebug()<<"setSortMode: actual_sort="<<actual_sort<<endline;
-
-	this->sort(1,Qt::AscendingOrder);
+	refresh();
 
 }
 
@@ -131,24 +136,22 @@ void todoProxyModel::setFilterMode(TodourFilterMode mode)
 	dueWarningDate=QDateTime::currentDateTime().addDays(-settings.value(SETTINGS_DUE_WARNING,DEFAULT_DUE_WARNING).toInt());
 
    endFilterChange(QSortFilterProxyModel::Direction::Rows);
-	this->invalidate();
-	this->sort(1,Qt::AscendingOrder);
+	refresh();
 }
 
 void todoProxyModel::addFilterMode(TodourFilterMode mode)
 /*TODO: this needs some check for incompatible modes, if any.
 */{
 	actual_filter |= mode;
+	refresh();
 }
 
 
 void todoProxyModel::setContexts(QStringList newc)
 /*
 */{
-//	beginFilterChange();
 	this->contexts = newc;
-//   endFilterChange(QSortFilterProxyModel::Direction::Rows);
-	this->invalidate();
+	refresh();
 }
 
 
@@ -190,4 +193,5 @@ void todoProxyModel::updateFilterText(QString filter)
 	
    this->setFilterRegularExpression(this->filterText);
    endFilterChange(QSortFilterProxyModel::Direction::Rows);
+   refresh();
 }
