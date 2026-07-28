@@ -12,7 +12,7 @@ static QRegularExpression regex_reldate("(?<rdate>"+RDATE_PAT+")(?:\\s*|$)");
 static QRegularExpression regex_url("(?:\\s+)[a-zA-Z0-9_]+:\\/\\/([-a-zA-Z0-9@:%_\\+.~#?&\\/=\\(\\)\\{\\}\\\\]*)");
 static QRegularExpression regex_color("(?:\\s+)color:([a-z]*)");
 //static QRegularExpression regex_threshold_project("(?:\\s+)t:(\\+[^\\s]+)(?#\\s+|$)");
-static QRegularExpression regex_threshold_context("(?:\\s+)t:(\\@[^\\s]+)|(\\+[^\\s]+)(?#\\s+|$)");
+static QRegularExpression regex_threshold_context("(?:\\s+)t:((\\@[^\\s]+)|(\\+[^\\s]+))(?#\\s+|$)");
 static QRegularExpression regex_threshold_date("(?:\\s+)(t:" + DATE_PAT + ")(?#\\s+|$)");
 static QRegularExpression regex_threshold_date_r("(?:\\s+)(t:" + RDATE_PAT + ")(?#\\s+|$)");
 
@@ -117,7 +117,7 @@ task::task(task* copy)
 	//_tuid=copy->getTuid();
 	_tuid=QUuid::createUuid();
 	_ttag=QDateTime::currentDateTime();
-	setActive(copy->isActive());
+	this->active = copy->isActive();
 	setInputDate(QDateTime::currentDateTime());
 }
 
@@ -267,15 +267,24 @@ void task::updateDescription()
 void task::updateContexts()
 /*
 */{
+	if (complete == Qt::Checked){
+		contexts.clear();
+		thr_contexts.clear();
+		return;
+		}
 	QRegularExpressionMatchIterator matcher = regex_context.globalMatch(_raw);
 	while (matcher.hasNext()) {
  	   contexts << matcher.next().captured(1); //we don't care about duplicates...
  	   }
  	   
 	matcher = regex_threshold_context.globalMatch(_raw);
-	while (matcher.hasNext()) {
+	while (matcher.hasNext()) 
  	   thr_contexts << matcher.next().captured(1); //we don't care about duplicates...
- 	   }
+
+
+ 	qDebug()<<"task::updateContexts. contexts= "<<contexts<<endline;
+	qDebug()<<"			 thr_contexts= "<<thr_contexts<<endline;
+
 }
 
 void task::setDueDate(QDateTime d)
@@ -460,7 +469,7 @@ task* task::setComplete(bool c)
 	}
 	this->updateDisplayText();
 	this->updateDescription();
-//	this->updateContexts();
+	this->updateContexts();
 	_ttag=QDateTime::currentDateTime();
 
 	return ret;
@@ -494,6 +503,20 @@ QString task::toSaveString_pureTODO() const
 */{
 	return getEditText();
 }
+
+void task::recalculateTask(QStringList inactiveflags)
+/* determine if the task is active / inactive based on inactiveflags list of keywords
+*/{
+		active=true;
+		for (QString i:inactiveflags){
+			if (displayText.contains(i)){
+				active=false;
+				break;
+				}
+			}
+}
+
+
 
 QString task::toString() const
 /* returns the full QString for debugging, including all hidden data.

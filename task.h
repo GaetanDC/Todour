@@ -67,7 +67,6 @@ public:
 	task* setComplete(bool c = true); // manage the rec:...
 	void setRaw(QString s);
 	void setProgress(int);
-
 	
 	inline QDateTime const getDueDate() {return dueD;};
 	inline QDateTime const getThresholdDate() {return thrD;};
@@ -83,11 +82,13 @@ public:
 	inline QDateTime getTimeStamp() const {return _ttag;}  //for future sync
 	inline bool operator==(task &t){return t.getTuid()==_tuid;}
 	inline QStringList getContexts(){return contexts;};
-	inline QStringList getThresholdContexts(){return contexts;};
-	inline bool isActive() const {return active;};
-	inline void setActive(bool state){active=state;};
+	inline QStringList getThresholdContexts(){return thr_contexts;};
 	inline int getProgress() const {return progress;};
 	
+	inline bool isActive() const {return active;};
+
+
+	void recalculateTask(QStringList inactiveflags);
 	
 	QString getURL() const;	
 	

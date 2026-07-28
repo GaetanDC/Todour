@@ -147,12 +147,12 @@
 #define DEFAULT_NN_TODAY 5
 
 // respect threshold. to be deleted.
-#define SETTINGS_THRESHOLD "threshold"
-#define DEFAULT_THRESHOLD false
+//#define SETTINGS_THRESHOLD "threshold"
+//#define DEFAULT_THRESHOLD false
 
 // respect date threshold
-//#define SETTINGS_THRESHOLD_DATES "threshold_dates"
-//#define DEFAULT_THRESHOLD_DATES true
+#define SETTINGS_THRESHOLD_DATES "threshold_dates"
+#define DEFAULT_THRESHOLD_DATES true
 
 //respect context / project threshold
 #define SETTINGS_THRESHOLD_LABELS "threshold_labels"
@@ -163,8 +163,8 @@
 #define DEFAULT_THRESHOLD_INACTIVE false
 
 // activate the "enhanced PM" mode, hide all the project-assigned tasks (+...) except if selected in filter. 
-//#define SETTINGS_ENHANCED_PM "enhanced_pm"
-//#define DEFAULT_ENHANCED_PM true
+#define SETTINGS_ENHANCED_PM "enhanced_pm"
+#define DEFAULT_ENHANCED_PM true
 
 // Filter selected to show all tasks.
 #define SETTINGS_SHOW_ALL "show_all"

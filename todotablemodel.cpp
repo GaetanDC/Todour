@@ -124,35 +124,34 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
 
     if (role == Qt::BackgroundRole && index.column()==1){ // proxy: soit rien ne change, soit on désactive les couleurs de fond en idea?
 		if (tasklist->at(index.row())->getColor()->isValid()) //CHANGE
-			return QVariant::fromValue(tasklist->at(index.row())->getColor()->lighter(180));  //CHANGE
+				return QVariant::fromValue(tasklist->at(index.row())->getColor()->lighter(180));  //CHANGE
 	}
 
-	if(role == Qt::UserRole+1){  //UserRole+1 returns inputdate
-		return QVariant(tasklist->at(index.row())->getInputDate());
-	}
+	if(role == Qt::UserRole+1)  //UserRole+1 returns inputdate
+			return QVariant(tasklist->at(index.row())->getInputDate());
 
-	if(role == Qt::UserRole+2){  //UserRole+2 returns active state (bool)
-		return tasklist->at(index.row())->isActive();
-      }
+	if(role == Qt::UserRole+2)  //UserRole+2 returns active state (bool)
+			return tasklist->at(index.row())->isActive();
 
-	if(role == Qt::UserRole+3){  //UserRole+3 returns thresholddate
-		return QVariant(tasklist->at(index.row())->getThresholdDate());
-	}
+	if(role == Qt::UserRole+3)  //UserRole+3 returns thresholddate
+			return QVariant(tasklist->at(index.row())->getThresholdDate());
 
-	if(role == Qt::UserRole+4){  //UserRole+4 returns duedate
-		return QVariant(tasklist->at(index.row())->getDueDate());
-	}
+	if(role == Qt::UserRole+4)  //UserRole+4 returns duedate
+			return QVariant(tasklist->at(index.row())->getDueDate());
 
-	if(role == Qt::UserRole+5){  //UserRole+5 returns thresholdContexts
-		return QVariant(tasklist->at(index.row())->getThresholdContexts());
-	}
-	if(role == Qt::UserRole+6){  //UserRole+6 returns Priority
-		return QVariant(tasklist->at(index.row())->getPriority());
-	}
-	if(role == Qt::UserRole+7){  //UserRole+6 returns Checked
-		return QVariant(tasklist->at(index.row())->isComplete());
-	}
+	if(role == Qt::UserRole+5)  //UserRole+5 returns thresholdContexts
+			return QVariant(tasklist->at(index.row())->getThresholdContexts());
 	
+	if(role == Qt::UserRole+6)  //UserRole+6 returns Priority
+			return QVariant(tasklist->at(index.row())->getPriority());
+
+	if(role == Qt::UserRole+7)  //UserRole+6 returns Checked
+			return QVariant(tasklist->at(index.row())->isComplete());
+			
+	if(role == Qt::UserRole+8)  //UserRole+8 returns Contexts
+		return QVariant(tasklist->at(index.row())->getContexts());
+	
+
    
 	return QVariant();
 }
@@ -208,13 +207,25 @@ void TodoTableModel::safeAdd(QString s, QString c)
 */{
 	undoS->push(new AddCommand(tasklist,s, c));
   	}
-	 
-void TodoTableModel::safeDelete(QUuid index)
-/* Safely delete a task, creating an undo command
+
+void TodoTableModel::safeDelete(QModelIndexList indexes)
+/* Safely delete tasks, creating undo commands
 */{
-//	qDebug()<<"TodoTableModel::safeDelete trying to del "<<index<<endline;
-	undoS->push(new DeleteCommand(tasklist,tasklist->getTask(index)));
+    QList<QUuid> tuidL;
+	if (!indexes.isEmpty()){
+		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
+			    tuidL.push_back(tasklist->at(i->row())->getTuid());
+	
+		startModelChange();
+		undoS->beginMacro("deletion"); //do not change this text!
+		for (QList<QUuid>::iterator j=tuidL.begin();j!=tuidL.end();++j)
+				undoS->push(new DeleteCommand(tasklist,tasklist->getTask(*j)));
+		undoS->endMacro(); 
+		endModelChange();		
+
 	}
+}
+
 
 void TodoTableModel::safePostpone(const QModelIndex & index, QString txt)
 /* Safely postpone a task, creating an undo command

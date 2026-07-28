@@ -63,44 +63,50 @@ We filter based on
 - the "today's view". We should be getting a score from (??) 
 */{
 	QModelIndex source_index = sourceModel()->index(sourceRow, 1, sourceParent);
-	if (filterTextHasProject){//the filtertext contains a project (+...)
-		return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
-		}
-	if ((!actual_filter.testFlag(todoProxyModel::ShowInactive)) ||
-				actual_filter.testFlag(todoProxyModel::TodaysView))
-		if (!sourceModel()->data(source_index,Qt::UserRole+2).toBool()) return false;
-	
-	if (actual_filter.testFlag(todoProxyModel::HideThreshold)||
-				actual_filter.testFlag(todoProxyModel::TodaysView)) {
-		if (actual_filter.testFlag(todoProxyModel::DateThreshold)){
-			if (sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())
-					return false;	
+	QDateTime t_dueDate = sourceModel()->data(source_index,Qt::UserRole+4).toDateTime();
+
+// hide inactive if not ShowAll
+	if (!actual_filter.testFlag(todoProxyModel::ShowAll) ||actual_filter.testFlag(todoProxyModel::TodaysView))
+			if (!sourceModel()->data(source_index,Qt::UserRole+2).toBool())// isActive()
+					if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
+
+// Threshold date.
+	if (actual_filter.testFlag(todoProxyModel::HideThresholdDate) && 
+			sourceModel()->data(source_index,Qt::UserRole+3).toDateTime().isValid() &&
+			sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())
+					if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
+
+// Due as Threshold
+	if (actual_filter.testFlag(todoProxyModel::HideUndue) && 
+			t_dueDate.isValid() &&
+			t_dueDate > dueWarningDate){
+//			qDebug()<<"filtering: reject Undue "<<t_dueDate<<dueWarningDate<<endline;
+					if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
 			}
-		if (actual_filter.testFlag(todoProxyModel::ContextThreshold)){
-				for (QString i:contexts){
-					if(sourceModel()->data(source_index,Qt::DisplayRole).toString().contains("t:"+i)){
-//							qDebug()<<"proxymodel::filteracceptrow: rejecting because "<<i<<endline;
-							return false;}
+
+// if ENHANCED_PM mode
+	if (actual_filter.testFlag(todoProxyModel::EnhancedPM)){
+	// 2.1 if a +project is selected, only show that one.
+		if (filterTextHasProject)//the filtertext contains a project (+...)
+				return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
+		else // else, hide all the +
+				if (! sourceModel()->data(source_index,Qt::UserRole+5).toStringList().empty())
+						return false;
+		}
+	else { // no enhancedPM, 
+		if (actual_filter.testFlag(todoProxyModel::HideThresholdContext)){
+//			qDebug()<<"filtering: reject context "<<contexts<<sourceModel()->data(source_index,Qt::UserRole+5).toStringList()<<endline;
+			for (QString i:contexts){
+				if (sourceModel()->data(source_index,Qt::UserRole+5).toStringList().contains(i)  //UserRole+5=threshold_context.
+//					|| sourceModel()->data(source_index,Qt::UserRole+8).toStringList().contains(i)
+						)
+						return false;
 					}
 			}
-		if (actual_filter.testFlag(todoProxyModel::DueAsThreshold)){
-			if (sourceModel()->data(source_index,Qt::UserRole+4).toDateTime()>dueWarningDate)
-					return false;
-			}
 		}
-		
-	if (actual_filter.testFlag(todoProxyModel::TodaysView)){
-	// hide inactive, threshold, D-priority, context-threshold, complete
-		if (sourceModel()->data(source_index,Qt::UserRole+7) == Qt::Checked) return false; // Checked
-//		if (!sourceModel()->data(source_index,Qt::UserRole+2).toBool()) return false; // is Active
-		if (sourceModel()->data(source_index,Qt::UserRole+6).toChar()>'C')	return false; // Priority
-//		if (sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())	return false; // Threshold date
-		
-//		for (QString i:contexts){
-//					if(sourceModel()->data(source_index,Qt::DisplayRole).toString().contains("t:"+i)){
-//							qDebug()<<"proxymodel::filteracceptrow: rejecting because "<<i<<endline;
-//							return false;}
-//					}
+	if (actual_filter.testFlag(todoProxyModel::TodaysView)){ // hide inactive, threshold, D-priority, context-threshold, complete
+		if (sourceModel()->data(source_index,Qt::UserRole+7) == Qt::Checked) return false; // no Checked task
+		if (sourceModel()->data(source_index,Qt::UserRole+6).toChar()>'C')	return false; // Priority must be low
 	}
 
 	
@@ -127,7 +133,8 @@ void todoProxyModel::setSortMode(TodourSortMode mode)
 void todoProxyModel::setFilterMode(TodourFilterMode mode)
 /*
 */{
-//	qDebug()<<"setFilterMode: actual_filter="<<actual_filter<<endline;
+
+//	qDebug()<<"setFilterMode: new filter="<<mode<<endline;
 
 	actual_filter=mode;
 
@@ -194,4 +201,5 @@ void todoProxyModel::updateFilterText(QString filter)
    this->setFilterRegularExpression(this->filterText);
    endFilterChange(QSortFilterProxyModel::Direction::Rows);
    refresh();
+   qDebug()<<"updateFilterText: filterTexthasProject="<<filterTextHasProject<<endline;
 }

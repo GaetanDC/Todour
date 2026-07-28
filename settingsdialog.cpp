@@ -23,8 +23,9 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui->cb_autorefresh->setChecked(settings.value(SETTINGS_AUTOREFRESH,DEFAULT_AUTOREFRESH).toBool());
 //    ui->cb_separate->setChecked(settings.value(SETTINGS_SEPARATE_INACTIVES,DEFAULT_SEPARATE_INACTIVES).toBool());
     ui->cb_deletedfile->setChecked(settings.value(SETTINGS_DELETED_FILE,DEFAULT_DELETED_FILE).toBool());
-    ui->cb_threshold->setChecked(settings.value(SETTINGS_THRESHOLD,DEFAULT_THRESHOLD).toBool());
-    ui->cb_threshold_label->setChecked(settings.value(SETTINGS_THRESHOLD_LABELS,DEFAULT_THRESHOLD_LABELS).toBool());
+//    ui->cb_threshold->setChecked(settings.value(SETTINGS_THRESHOLD,DEFAULT_THRESHOLD).toBool());
+    ui->cb_enhancedPM->setChecked(settings.value(SETTINGS_ENHANCED_PM,DEFAULT_ENHANCED_PM).toBool());
+//    ui->cb_threshold_label->setChecked(settings.value(SETTINGS_THRESHOLD_LABELS,DEFAULT_THRESHOLD_LABELS).toBool());
  //   ui->cb_threshold_inactive->setChecked(settings.value(SETTINGS_THRESHOLD_INACTIVE,DEFAULT_THRESHOLD_INACTIVE).toBool());
  //   ui->cb_due_as_threshold->setChecked(settings.value(SETTINGS_DUE_AS_THRESHOLD,DEFAULT_DUE_AS_THRESHOLD).toBool());
     ui->cb_dates->setChecked(settings.value(SETTINGS_DATES,DEFAULT_DATES).toBool());
@@ -36,7 +37,7 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui->cb_due->setChecked(settings.value(SETTINGS_DUE,DEFAULT_DUE).toBool());
     ui->sb_due_warning->setValue(settings.value(SETTINGS_DUE_WARNING,DEFAULT_DUE_WARNING).toInt());
     ui->comb_priorities->setCurrentIndex(settings.value(SETTINGS_PRIO_ON_CLOSE, DEFAULT_PRIO_ON_CLOSE).toInt());
-    ui->sb_fontSize->setValue(qApp->font().pointSize());
+//    ui->sb_fontSize->setValue(qApp->font().pointSize());
     ui->cb_removeDoublets->setChecked(settings.value(SETTINGS_REMOVE_DOUBLETS,DEFAULT_REMOVE_DOUBLETS).toBool());
     ui->search_not_char->setText(settings.value(SETTINGS_SEARCH_NOT_CHAR,DEFAULT_SEARCH_NOT_CHAR).toChar());
     ui->cb_default_threshold->setCurrentText(settings.value(SETTINGS_DEFAULT_THRESHOLD,DEFAULT_DEFAULT_THRESHOLD).toString());
@@ -63,8 +64,8 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     // Handle the fonts
     activecolor=QColor::fromRgba(settings.value(SETTINGS_ACTIVE_COLOR,DEFAULT_ACTIVE_COLOR).toUInt());
     inactivecolor=QColor::fromRgba(settings.value(SETTINGS_INACTIVE_COLOR,DEFAULT_INACTIVE_COLOR).toUInt());
-    activefont.fromString(settings.value(SETTINGS_ACTIVE_FONT).toString());
-    inactivefont.fromString(settings.value(SETTINGS_INACTIVE_FONT).toString());
+    activefont.fromString(settings.value(SETTINGS_ACTIVE_FONT, DEFAULT_ACTIVE_FONT).toString());
+    inactivefont.fromString(settings.value(SETTINGS_INACTIVE_FONT, DEFAULT_INACTIVE_FONT).toString());
     updateFonts();
     refresh=false;
 }
@@ -99,8 +100,9 @@ void SettingsDialog::on_buttonBox_accepted()
     settings.setValue(SETTINGS_ACTIVE_FONT,activefont.toString());
     settings.setValue(SETTINGS_HOTKEY_ENABLE,ui->cb_hotKey->isChecked());
     settings.setValue(SETTINGS_DELETED_FILE,ui->cb_deletedfile->isChecked());
-    settings.setValue(SETTINGS_THRESHOLD,ui->cb_threshold->isChecked());
-    settings.setValue(SETTINGS_THRESHOLD_LABELS,ui->cb_threshold_label->isChecked());
+    settings.setValue(SETTINGS_ENHANCED_PM,ui->cb_enhancedPM->isChecked());
+//    settings.setValue(SETTINGS_THRESHOLD,ui->cb_threshold->isChecked());
+//    settings.setValue(SETTINGS_THRESHOLD_LABELS,ui->cb_threshold_label->isChecked());
     //	settings.setValue(SETTINGS_THRESHOLD_INACTIVE,ui->cb_threshold_inactive->isChecked());
     //	settings.setValue(SETTINGS_DUE_AS_THRESHOLD,ui->cb_due_as_threshold->isChecked());
     settings.setValue(SETTINGS_TRAY_ENABLED,ui->cb_tray_icon->isChecked());
@@ -109,7 +111,7 @@ void SettingsDialog::on_buttonBox_accepted()
     settings.setValue(SETTINGS_CHECK_UPDATES,ui->cb_CheckUpdates->isChecked());
     settings.setValue(SETTINGS_PRIO_ON_CLOSE,ui->comb_priorities->currentIndex());
     settings.setValue(SETTINGS_DEFAULT_THRESHOLD,ui->cb_default_threshold->currentText());
-    settings.setValue(SETTINGS_FONT_SIZE,ui->sb_fontSize->value());
+//    settings.setValue(SETTINGS_FONT_SIZE,ui->sb_fontSize->value());
     settings.setValue(SETTINGS_REMOVE_DOUBLETS,ui->cb_removeDoublets->isChecked());
     settings.setValue(SETTINGS_NOTE_ENABLE,ui->cb_note_enable->isChecked());
     if(ui->search_not_char->text().size()>0)

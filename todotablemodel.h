@@ -22,7 +22,9 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     Qt::ItemFlags flags(const QModelIndex& index) const;
  	 bool setData(const QModelIndex & index, const QVariant & value, int role);
-	 inline task* getTask(QModelIndex index) {return (tasklist->at(index.row()));};
+
+
+//	 inline task* getTask(QModelIndex index) {return (tasklist->at(index.row()));};
 
     void refresh();    
 //    void refreshActive(); //cycle through all task to recalculate the active state
@@ -33,7 +35,7 @@ public:
 	 void safeEdit(const QModelIndex & index, QString _raw);
     void safeAdd(task* _t);
     void safeAdd(QString s, QString c="");
-    void safeDelete(QUuid index);
+    void safeDelete(QModelIndexList indexes);
     void safePostpone(const QModelIndex & index, QString txt);
     void safePriority(const QModelIndex & index, QChar prio);
 	 void safeToggleComplete(const QModelIndex & index);

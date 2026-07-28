@@ -22,7 +22,6 @@ public:
    explicit taskset(QObject *parent = 0);
    ~taskset();
 	inline task* at(int position) const {return content.at(position);};
-	void recalculateTask(task* wip);
 
 
 
@@ -36,6 +35,7 @@ public:
 	void flush();
 	void archive();
 	inline QStringList getContexts(){return contexts;};
+	inline QStringList getFullContexts(){return contexts + full_contexts;};
    void setFileWatch(bool b, QObject *parent);
 
 
@@ -57,6 +57,7 @@ public slots:
     
 private:
 	QStringList contexts;
+	QStringList full_contexts;
 	QStringList inactiveFlags;
 };
 

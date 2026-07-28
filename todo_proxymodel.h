@@ -24,14 +24,14 @@ enum iTaskSortMode{
 	};
 Q_DECLARE_FLAGS(TodourSortMode, iTaskSortMode)
 
-enum iTaskFilterMode{
-	NoFilter=0x0,
-	TodaysView=0x1,
-	HideThreshold=0x2,
-	DueAsThreshold=0x4,
-	ContextThreshold=0x8,
-	DateThreshold=0x10,
-	ShowInactive=0x80
+enum iTaskFilterMode{ //ShowAll, Hide date th, Hide Context th, enhanced pm, dueAsTh, Todaysv
+	NoFilter=0x0, //error
+	HideThresholdDate=0x1,
+	HideThresholdContext=0x2,
+	HideUndue=0x4,
+	TodaysView=0x10,
+	EnhancedPM=0x20,
+	ShowAll=0x80
 	};
 Q_DECLARE_FLAGS(TodourFilterMode, iTaskFilterMode)
 

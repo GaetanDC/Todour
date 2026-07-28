@@ -10,14 +10,12 @@ taskset::taskset(QObject *parent)
 /* 
 */{
 	Q_UNUSED(parent);
-   QSettings settings;
 
    todo = new todotxt();
 	QObject::connect(todo,SIGNAL(DataChanged()),this,SLOT(backendDataLoaded()));//REM
 	QObject::connect(todo,SIGNAL(DataAvailable()),this,SLOT(backendDataLoaded()));//REM
 	QObject::connect(todo,SIGNAL(DataSaved()),this,SIGNAL(dataSavedOK()));//REM
-	if (todo->isReady())
-		todo->reloadRequest();
+	if (todo->isReady()) todo->reloadRequest();
 
 	recalculate();
 }
@@ -70,11 +68,11 @@ void taskset::flush()
 QString taskset::toString()
 /* 
 */{
-	return "";    
+	return QString("taskset: tasks contained: ") + QString::number(size());
 }
     
 void taskset::backendDataLoaded()
-/* 
+/* Called when the backend is ready to supply data.
 */{
   	todo->getAllTask(content);  
 //  		qDebug()<<"void taskset::backendDataLoaded() - all tasks loaded"<<endline;
@@ -122,31 +120,20 @@ void taskset::recalculate()
 - through all tasks, 
 */{
 	QSettings settings;
+	contexts.clear();
+	full_contexts.clear();
 	inactiveFlags = settings.value(SETTINGS_INACTIVE,DEFAULT_INACTIVE).toString().split(";");
 	for (vector<task*>::iterator itask=content.begin();itask!=content.end();++itask){
 		for(QString s:(*itask)->getContexts()){
-			if (! contexts.contains(s))
-					contexts<<s;
-		}
-
-			//check all tasks for inactive keywords
-		recalculateTask(*itask);
-	}
-	
-	qDebug()<<"taskset::recalculate: "<<contexts<<endline;
-}
-
-void taskset::recalculateTask(task* wip)
-/*
-*/{
-		wip->setActive(true);
-		for (QString i:inactiveFlags){
-			if (wip->getDisplayText().contains(i)){
-				wip->setActive(false);
-				break;
-				}
+			if (! contexts.contains(s)) contexts<<s;			
+			}
+		for(QString s:(*itask)->getThresholdContexts()){
+			if (! full_contexts.contains(s)) full_contexts<<s;
 			}
 
+			//check all tasks for inactive keywords
+		(*itask)->recalculateTask(inactiveFlags);
+	}
 }
 
 

@@ -150,11 +150,14 @@ MainWindow::MainWindow(QWidget *parent) :
     	connect(ui->sortAzAction, SIGNAL(triggered()), this, SLOT(on_actionSortAZ()));
     	connect(ui->sortDateAction, SIGNAL(triggered()), this, SLOT(on_actionSortDate()));
     	connect(ui->sortInactiveAction, SIGNAL(triggered()), this, SLOT(on_actionSortInactive()));    	
-    	connect(ui->todaysViewAction, SIGNAL(triggered()), this, SLOT(on_actionTodaysView()));    	
-
-    	connect(ui->respectThresholdAction, SIGNAL(triggered()), this, SLOT(on_actionRespectThreshold()));
-   	connect(ui->thresholdDueAction, SIGNAL(triggered()), this, SLOT(on_actionThresholdDue()));
-   	connect(ui->showInactiveAction, SIGNAL(triggered()), this, SLOT(on_actionShowInactive()));
+    	
+    	connect(ui->todaysViewAction, SIGNAL(triggered()), this, SLOT(updateFilter()));    	
+    	connect(ui->respectThresholdDateAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
+		connect(ui->respectThresholdContextAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
+   	connect(ui->thresholdDueAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
+   	connect(ui->showAllAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
+   	connect(ui->lineEditFilter, SIGNAL(currentTextChanged(QString)),this, SLOT(updateFilterText(QString)));
+ 		connect(ui->lineEditNew, SIGNAL(returnPressed()),this, SLOT(on_addButton_clicked()));
     	
     	ui->btn_Alphabetical->setMenu(ui->sortMenu);
     	ui->btn_Alphabetical->setPopupMode( QToolButton::InstantPopup);
@@ -249,32 +252,35 @@ It should be safe to run it at any time.
     stayOnTop();
    
 	//set font size
-    auto f = qApp->font();
-    f.setPointSize(settings.value(SETTINGS_FONT_SIZE,DEFAULT_FONT_SIZE).toInt());
-    qApp->setFont(f);
+//    auto f = qApp->font();
+//    f.setPointSize(settings.value(SETTINGS_FONT_SIZE,DEFAULT_FONT_SIZE).toInt());
+//    qApp->setFont(f);
     
    task_set->setFileWatch(settings.value(SETTINGS_AUTOREFRESH).toBool(),(QObject*) this);
 //	task_set->recalculate();
 
 //	proxyModel->setContexts(task_set->getContexts());
 			
-	ui->respectThresholdAction->setChecked(settings.value(SETTINGS_THRESHOLD_INACTIVE,DEFAULT_THRESHOLD_INACTIVE).toBool());
+	ui->respectThresholdDateAction->setChecked(settings.value(SETTINGS_THRESHOLD_DATES,DEFAULT_THRESHOLD_DATES).toBool());
+	ui->respectThresholdContextAction->setChecked(settings.value(SETTINGS_THRESHOLD_LABELS,DEFAULT_THRESHOLD_LABELS).toBool());
 	ui->thresholdDueAction->setChecked(settings.value(	SETTINGS_DUE_AS_THRESHOLD,DEFAULT_DUE_AS_THRESHOLD).toBool());
-	ui->showInactiveAction->setChecked(settings.value(	SETTINGS_HIDE_INACTIVE,DEFAULT_HIDE_INACTIVE).toBool());
+	ui->showAllAction->setChecked(settings.value(	SETTINGS_HIDE_INACTIVE,DEFAULT_HIDE_INACTIVE).toBool());
 
 	
 	todoProxyModel::TodourFilterMode newfval = todoProxyModel::NoFilter;	
-	if(settings.value(SETTINGS_THRESHOLD_LABELS, DEFAULT_THRESHOLD_LABELS).toBool())
-			newfval |= todoProxyModel::ContextThreshold;
-	if(settings.value(SETTINGS_THRESHOLD, DEFAULT_THRESHOLD).toBool())
-			newfval |= todoProxyModel::DateThreshold;
-
-	if (ui->todaysViewAction->isChecked())	newfval |= todoProxyModel::TodaysView;
-	if (ui->respectThresholdAction->isChecked())	newfval |= todoProxyModel::HideThreshold;
-	if (ui->thresholdDueAction->isChecked())	newfval |= todoProxyModel::DueAsThreshold;
-	if (ui->showInactiveAction->isChecked())	newfval |= todoProxyModel::ShowInactive;
-	proxyModel->setFilterMode(newfval);
-
+	if(settings.value(SETTINGS_ENHANCED_PM, DEFAULT_ENHANCED_PM).toBool()) {
+		newfval |= todoProxyModel::EnhancedPM;
+		ui->respectThresholdContextAction->setEnabled(false);
+		qDebug()<<"Maiwindow::updateSettings - thr_context disabled"<<endline;
+		}
+	else {
+		newfval &= ~todoProxyModel::EnhancedPM;
+		ui->respectThresholdContextAction->setEnabled(true);
+	}
+	proxyModel->setFilterMode(newfval);			
+			
+	
+	updateFilter(true);
 
 	ui->sortInactiveAction->setChecked(settings.value(SETTINGS_SEPARATE_INACTIVES,DEFAULT_SEPARATE_INACTIVES).toBool());
 	ui->sortAzAction->setChecked(settings.value(SETTINGS_SORT_AZ,DEFAULT_SORT_AZ).toBool());
@@ -298,16 +304,24 @@ void MainWindow::dataInModelChanged(QModelIndex i1,QModelIndex i2)
 We need to update the title + recalculate the tasks active.
 */
 {
+	QSettings settings;
     Q_UNUSED(i2)// one day, we can limit the computation to some subset...
     Q_UNUSED(i1)
     
 	task_set->recalculate();
-	proxyModel->setContexts(task_set->getContexts());
-	
-	//TODO: create a system to identify the change of context at lower level. Only update if changed.
 	ui->lineEditFilter->clear();
 	ui->lineEditFilter->addItem("");
-	ui->lineEditFilter->addItems(task_set->getContexts());
+
+	if ( settings.value(SETTINGS_ENHANCED_PM,DEFAULT_ENHANCED_PM).toBool()){
+		proxyModel->setContexts(task_set->getFullContexts());
+		ui->lineEditFilter->addItems(task_set->getFullContexts());
+		}
+	else{
+		proxyModel->setContexts(task_set->getContexts());
+		ui->lineEditFilter->addItems(task_set->getContexts());
+		}
+	
+	//TODO: create a system to identify the change of context at lower level. Only update if changed.
 	proxyModel->refresh();
 	
 	updateTitle();  
@@ -354,6 +368,72 @@ void MainWindow::on_noteView_customContextMenuRequested(const QPoint &pos)
 	}
 
 
+void MainWindow::updateFilterText(QString arg1)
+/* This function reads the filter submenu status + lineEditFilter text to give the right info to the proxy.
+*/{
+	QSettings settings;
+    if(settings.value(SETTINGS_LIVE_SEARCH,DEFAULT_LIVE_SEARCH).toBool()){
+        proxyModel->updateFilterText(arg1);
+        updateTitle();
+    }
+
+}
+
+void MainWindow::updateFilter(bool force)
+/* This function reads the filter submenu status + lineEditFilter text to give the right info to the proxy.
+*/{
+	todoProxyModel::TodourFilterMode currentMode = proxyModel->getFilterMode();
+	todoProxyModel::TodourFilterMode newval=proxyModel->getFilterMode();
+	
+	if (ui->todaysViewAction->isChecked()){
+		newval |= todoProxyModel::TodaysView;
+		ui->respectThresholdDateAction->setEnabled(false);
+		ui->respectThresholdContextAction->setEnabled(false);
+   	ui->thresholdDueAction->setEnabled(false);
+   	ui->showAllAction->setEnabled(false);
+		}
+	else{
+		newval &=  ~todoProxyModel::TodaysView;
+		ui->respectThresholdDateAction->setEnabled(true);
+		ui->respectThresholdContextAction->setEnabled(true);
+   	ui->thresholdDueAction->setEnabled(true);
+   	ui->showAllAction->setEnabled(true);
+		}
+
+	if (ui->respectThresholdDateAction->isChecked())
+			newval |= todoProxyModel::HideThresholdDate;
+	else
+			newval &= ~todoProxyModel::HideThresholdDate;
+
+	if (ui->respectThresholdContextAction->isChecked())
+			newval |= todoProxyModel::HideThresholdContext;
+	else
+			newval &= ~todoProxyModel::HideThresholdContext;
+
+			
+	if (ui->thresholdDueAction->isChecked())
+		newval |= todoProxyModel::HideUndue;
+	else
+		newval &= ~todoProxyModel::HideUndue;
+
+
+	if (ui->showAllAction->isChecked())
+		newval |= todoProxyModel::ShowAll;
+	else
+		newval &= ~todoProxyModel::ShowAll;
+
+	if (force || newval != currentMode)
+			proxyModel->setFilterMode(newval);
+	updateTitle();
+}
+
+void MainWindow::updateSort()
+/*
+*/{
+	qDebug()<<"MainWindow::updateSort()"<<endline;
+
+}
+
 void MainWindow::setHotkey(){
 	//COMMENTED TO PREVENT SEGFAULT IN WAYLAND
 //	return;
@@ -371,25 +451,6 @@ void MainWindow::setHotkey(){
 	}
 
 
-//void MainWindow::on_lineEditFilter_textEdited(const QString &arg1)
-void MainWindow::on_lineEditFilter_currentTextChanged(const QString &arg1)
-/* User edited the "filter" field. If liveupdate settings is activates, we have to inform the Proxymodel of the change
-*/{
-	QSettings settings;
-    if(settings.value(SETTINGS_LIVE_SEARCH,DEFAULT_LIVE_SEARCH).toBool()){
-        proxyModel->updateFilterText(arg1);
-        updateTitle();
-    }
-}
-
-void MainWindow::on_lineEditFilter_returnPressed()
-/* 
-*/{
-	QSettings settings;
-    if(!settings.value(SETTINGS_LIVE_SEARCH,DEFAULT_LIVE_SEARCH).toBool()){
-        proxyModel->updateFilterText(ui->lineEditFilter->currentText());
-    }
-}
 
 void MainWindow::on_actionSortAZ()
 /* sorts the list A to Z
@@ -438,77 +499,6 @@ void MainWindow::on_actionSortInactive()
 	//proxyModel->sort_InactiveLast(settings.value(SETTINGS_SEPARATE_INACTIVES,DEFAULT_SEPARATE_INACTIVES).toBool());
 }
 
-void MainWindow::on_actionTodaysView()
-/* Shows the todays View.
-This contains only the active tasks, tasks get a score, we show only the nn first.
-nn can be in options.
-*/{
-	todoProxyModel::TodourFilterMode newval=proxyModel->getFilterMode();
-	if (ui->todaysViewAction->isChecked()){
-//		proxyModel->todaysView(true);
-		newval |= todoProxyModel::TodaysView;
-		ui->respectThresholdAction->setEnabled(false);
-   	ui->thresholdDueAction->setEnabled(false);
-   	ui->showInactiveAction->setEnabled(false);
-		}
-	else{
-//		proxyModel->todaysView(false);
-		newval &=  ~todoProxyModel::TodaysView;
-		ui->respectThresholdAction->setEnabled(true);
-   	ui->thresholdDueAction->setEnabled(true);
-   	ui->showInactiveAction->setEnabled(true);
-		}
-	proxyModel->setFilterMode(newval);
-	updateTitle();
-}
-
-void MainWindow::on_actionRespectThreshold()
-/* This is the "Show threshold" selection switch. 
-	- when changed, refresh the list
-	- when inactive, hide all "inactive" tasks
-	- when active, show all "inactive" tasks
-*/{
-	QSettings settings;
-   settings.setValue(SETTINGS_THRESHOLD_INACTIVE,ui->respectThresholdAction->isChecked());
-   todoProxyModel::TodourFilterMode newval = proxyModel->getFilterMode(); 
-	if (ui->respectThresholdAction->isChecked())
-			newval |= todoProxyModel::HideThreshold;
-	else
-			newval &= ~todoProxyModel::HideThreshold;
-			
-	proxyModel->setFilterMode(newval);
-	updateTitle();
-}
-
-
-void MainWindow::on_actionThresholdDue()
-/* */{
-	QSettings settings;
-	settings.setValue(SETTINGS_DUE_AS_THRESHOLD, ui->thresholdDueAction->isChecked());
-
-   todoProxyModel::TodourFilterMode newval = proxyModel->getFilterMode(); 
-	if (ui->thresholdDueAction->isChecked())
-		newval |= todoProxyModel::DueAsThreshold;
-	else
-		newval &= ~todoProxyModel::DueAsThreshold;
-	proxyModel->setFilterMode(newval);
-	updateTitle();
-}
-
-void MainWindow::on_actionShowInactive()
-/* */{
-	QSettings settings;
-	settings.setValue(SETTINGS_HIDE_INACTIVE, ui->showInactiveAction->isChecked());
-
-
-   todoProxyModel::TodourFilterMode newval = proxyModel->getFilterMode(); 
-	if (ui->showInactiveAction->isChecked())
-		newval |= todoProxyModel::ShowInactive;
-	else
-		newval &= ~todoProxyModel::ShowInactive;
-	proxyModel->setFilterMode(newval);
-		updateTitle();
-}
 
 
 void MainWindow::on_actionCopy()
@@ -696,6 +686,12 @@ void MainWindow::cleanup()
 	QSettings settings;
 	qDebug()<<"Clean up ..."<<endline;	
 	on_actionSave_triggered();
+	
+   settings.setValue(SETTINGS_THRESHOLD_DATES,ui->respectThresholdDateAction->isChecked());
+   settings.setValue(SETTINGS_THRESHOLD_LABELS,ui->respectThresholdContextAction->isChecked());
+	settings.setValue(SETTINGS_DUE_AS_THRESHOLD, ui->thresholdDueAction->isChecked());
+	settings.setValue(SETTINGS_HIDE_INACTIVE, ui->showAllAction->isChecked());
+
    settings.setValue( SETTINGS_GEOMETRY, saveGeometry() );
    settings.setValue( SETTINGS_SAVESTATE, saveState() );
    settings.setValue( SETTINGS_MAXIMIZED, isMaximized() );
@@ -794,21 +790,10 @@ void MainWindow::on_actionComplete()
 void MainWindow::on_actionDelete()
 /* User clicked on "Delete". We remove the selected items
 */{
-    QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
+   QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
+	model->safeDelete(indexes);
+   updateTitle();
 
-    QList<QUuid> tuidL;
-	if (!indexes.isEmpty()){
-		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
-			    tuidL.push_back(model->getTask(*i)->getTuid());
-	
-		model->startModelChange();
-		_undoStack->beginMacro("deletion"); //do not change this text!
-		for (QList<QUuid>::iterator j=tuidL.begin();j!=tuidL.end();++j)
-				model->safeDelete(*j);
-		_undoStack->endMacro(); 
-		model->endModelChange();		
-    	updateTitle();
-    }
 }
 
 void MainWindow::on_actionPostpone()
