@@ -73,39 +73,53 @@ We filter based on
 			if (!sourceModel()->data(source_index,Qt::UserRole+2).toBool())// isActive()
 					if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
 
-// Threshold date.
-	if (actual_filter.testFlag(todoProxyModel::HideThresholdDate) && 
-			sourceModel()->data(source_index,Qt::UserRole+3).toDateTime().isValid() &&
-			sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())
-					if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
-
-// Due as Threshold
-	if (actual_filter.testFlag(todoProxyModel::HideUndue) && 
-			t_dueDate.isValid() &&
-			t_dueDate > dueWarningDate){
-//			qDebug()<<"filtering: reject Undue "<<t_dueDate<<dueWarningDate<<endline;
-					if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
-			}
 
 // if ENHANCED_PM mode
 	if (actual_filter.testFlag(todoProxyModel::EnhancedPM)){
 	// 2.1 if a +project is selected, only show that one.
 		if (filterTextHasProject)//the filtertext contains a project (+...)
 				return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
-		else // else, hide all the +
-				if (! sourceModel()->data(source_index,Qt::UserRole+5).toStringList().empty())
-						return false;
+		else{ // else, hide all the +
+			if ( (! sourceModel()->data(source_index,Qt::UserRole+5).toStringList().empty())
+					|| (! sourceModel()->data(source_index,Qt::UserRole+8).toStringList().empty() ) )
+							return false;
+					// Threshold date.
+			if (actual_filter.testFlag(todoProxyModel::HideThresholdDate) && 
+					sourceModel()->data(source_index,Qt::UserRole+3).toDateTime().isValid() &&
+					sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())
+							if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
+					// Due as Threshold
+			if (actual_filter.testFlag(todoProxyModel::HideUndue) && 
+					t_dueDate.isValid() &&
+					t_dueDate > dueWarningDate){
+							if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
+					}
+			}
 		}
 	else { // no enhancedPM, 
 		if (actual_filter.testFlag(todoProxyModel::HideThresholdContext)){
 //			qDebug()<<"filtering: reject context "<<contexts<<sourceModel()->data(source_index,Qt::UserRole+5).toStringList()<<endline;
 			for (QString i:contexts){
 				if (sourceModel()->data(source_index,Qt::UserRole+5).toStringList().contains(i)  //UserRole+5=threshold_context.
-//					|| sourceModel()->data(source_index,Qt::UserRole+8).toStringList().contains(i)
+//						|| sourceModel()->data(source_index,Qt::UserRole+8).toStringList().contains(i)
 						)
-						return false;
-					}
+							return false;
+				}
 			}
+						// Threshold date.
+		if (actual_filter.testFlag(todoProxyModel::HideThresholdDate) && 
+				sourceModel()->data(source_index,Qt::UserRole+3).toDateTime().isValid() &&
+				sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())
+						if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
+
+						// Due as Threshold
+		if (actual_filter.testFlag(todoProxyModel::HideUndue) && 
+				t_dueDate.isValid() &&
+				t_dueDate > dueWarningDate){
+						if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
+				}
+
+
 		}
 	if (actual_filter.testFlag(todoProxyModel::TodaysView)){ // hide inactive, threshold, D-priority, context-threshold, complete
 		if (sourceModel()->data(source_index,Qt::UserRole+7) == Qt::Checked) return false; // no Checked task
