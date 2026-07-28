@@ -103,6 +103,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->addButton->setIcon(awesome->icon(fa::fa_solid, fa::fa_plus ));
     ui->context_lock->setIcon(awesome->icon(fa::fa_solid, fa::fa_lock, options));
     ui->pb_closeVersionBar->setIcon(awesome->icon(fa::fa_solid, fa::fa_xmark));
+	 ui->deleteAction->setIcon(awesome->icon(fa::fa_solid, fa::fa_trash));
+	 ui->editAction->setIcon(awesome->icon(fa::fa_solid, fa::fa_pencil));
+	 ui->completeAction->setIcon(awesome->icon(fa::fa_solid, fa::fa_check));
+	 ui->duplicateAction->setIcon(awesome->icon(fa::fa_solid, fa::fa_clone));
+	 ui->postponeAction->setIcon(awesome->icon(fa::fa_solid, fa::fa_forward));
+	 ui->dueTodayAction->setIcon(awesome->icon(fa::fa_solid, fa::fa_plane));
 
 	ui->actionSave->setShortcuts(QKeySequence::Save);
 	ui->actionQuit->setShortcuts(QKeySequence::Quit);

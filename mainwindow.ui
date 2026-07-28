@@ -473,17 +473,19 @@ border-radius: 5px;
    <property name="text">
     <string>Undo</string>
    </property>
-    <property name="icon">
-     <iconset>icons/undo.png</iconset>
-     </property>
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditUndo">
+     <normaloff>icons/undo.png</normaloff>icons/undo.png</iconset>
+   </property>
   </action>
     <action name="redoAction">
    <property name="text">
     <string>Redo</string>
    </property>
-    <property name="icon">
-     <iconset>icons/redo.png</iconset>
-     </property>
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditRedo">
+     <normaloff>icons/undo.png</normaloff>icons/undo.png</iconset>
+   </property>
   </action>
 
  
