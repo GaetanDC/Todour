@@ -35,7 +35,7 @@ public:
 	void flush();
 	void archive();
 	inline QStringList getContexts(){return contexts;};
-	inline QStringList getFullContexts(){return contexts + full_contexts;};
+	QStringList getFullContexts();
    void setFileWatch(bool b, QObject *parent);
 
 

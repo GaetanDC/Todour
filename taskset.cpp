@@ -65,6 +65,15 @@ void taskset::flush()
    todo->writeRequest(content,typeTodo,false); // append=false
 }
 
+QStringList taskset::getFullContexts()
+/*
+*/{
+	QStringList ret = contexts + full_contexts;
+	ret.removeDuplicates();
+	return ret;
+	}
+
+
 QString taskset::toString()
 /* 
 */{
