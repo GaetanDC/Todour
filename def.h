@@ -55,6 +55,9 @@
 #define SETTINGS_STAY_ON_TOP "stay_on_top"
 #define DEFAULT_STAY_ON_TOP false
 
+// Position of the splitter
+#define SETTING_SPLITTER_SIZE "splitterSizes"
+
 // Show the note.txt editing box
 #define SETTINGS_NOTE_ENABLE "note_enable"
 #define DEFAULT_NOTE_ENABLE true

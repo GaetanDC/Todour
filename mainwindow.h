@@ -83,11 +83,6 @@ private slots:
    inline void on_actionPriorityC(){on_actionPriority('C');}
    inline void on_actionPriorityD(){on_actionPriority('D');}
   
-  
-   void on_actionSortAZ();
-   void on_actionSortDate();
-   void on_actionSortInactive();
-   
    void updateFilter(bool force=false);
    void updateFilterText(QString);
    void updateSort();

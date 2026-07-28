@@ -24,7 +24,8 @@
 #include <QPrintDialog> //used for printing
 #include <QTextDocument> //used for printing
 #include <QGuiApplication>
-
+#include <QActionGroup>
+	
 #define NEW_VERSION_STRING "<a href=\"http://nerdur.com/todour-pl\">http://nerdur.com/todour-pl</a>"
 
 TodoTableModel *model=NULL;
@@ -147,9 +148,13 @@ MainWindow::MainWindow(QWidget *parent) :
 		connect(_undoStack, SIGNAL(canRedoChanged(bool)), ui->redoAction, SLOT(setEnabled(bool)));
 		connect(ui->redoAction, SIGNAL(triggered()), this, SLOT(on_actionRedo()));
 	    	
-    	connect(ui->sortAzAction, SIGNAL(triggered()), this, SLOT(on_actionSortAZ()));
-    	connect(ui->sortDateAction, SIGNAL(triggered()), this, SLOT(on_actionSortDate()));
-    	connect(ui->sortInactiveAction, SIGNAL(triggered()), this, SLOT(on_actionSortInactive()));    	
+    	connect(ui->sortAzAction, SIGNAL(triggered()), this, SLOT(updateSort()));
+    	connect(ui->sortDateAction, SIGNAL(triggered()), this, SLOT(updateSort()));
+    	connect(ui->sortInactiveAction, SIGNAL(triggered()), this, SLOT(updateSort()));    	
+		
+		QActionGroup* sortActionGroup = new QActionGroup(ui->btn_Alphabetical);
+		ui->sortAzAction->setActionGroup(sortActionGroup);
+		ui->sortDateAction->setActionGroup(sortActionGroup);
     	
     	connect(ui->todaysViewAction, SIGNAL(triggered()), this, SLOT(updateFilter()));    	
     	connect(ui->respectThresholdDateAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
@@ -158,7 +163,7 @@ MainWindow::MainWindow(QWidget *parent) :
    	connect(ui->showAllAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
    	connect(ui->lineEditFilter, SIGNAL(currentTextChanged(QString)),this, SLOT(updateFilterText(QString)));
  		connect(ui->lineEditNew, SIGNAL(returnPressed()),this, SLOT(on_addButton_clicked()));
-    	
+    	    	
     	ui->btn_Alphabetical->setMenu(ui->sortMenu);
     	ui->btn_Alphabetical->setPopupMode( QToolButton::InstantPopup);
     	ui->btn_Filter->setMenu(ui->filterMenu);
@@ -187,33 +192,23 @@ MainWindow::MainWindow(QWidget *parent) :
 	note_set = new noteset(this);
 	connect(note_set,SIGNAL(updateText(QString)),this,SLOT(handleNoteUpdate(QString)));
 	note_set->reLoad();	
-//	connect(ui->noteView, SIGNAL(textChanged()),this,SLOT(noteTextChanged()));
-
-
 
 	ui->context_lock->setChecked(settings.value(SETTINGS_CONTEXT_LOCK,DEFAULT_CONTEXT_LOCK).toBool());
+	ui->sortAzAction->setChecked(settings.value(SETTINGS_SORT_AZ,DEFAULT_SORT_AZ).toBool());
+	ui->sortDateAction->setChecked(settings.value(SETTINGS_SORT_IDATE,DEFAULT_SORT_IDATE).toBool());
+	ui->respectThresholdDateAction->setChecked(settings.value(SETTINGS_THRESHOLD_DATES,DEFAULT_THRESHOLD_DATES).toBool());
+	ui->respectThresholdContextAction->setChecked(settings.value(SETTINGS_THRESHOLD_LABELS,DEFAULT_THRESHOLD_LABELS).toBool());
+	ui->thresholdDueAction->setChecked(settings.value(	SETTINGS_DUE_AS_THRESHOLD,DEFAULT_DUE_AS_THRESHOLD).toBool());
+	ui->showAllAction->setChecked(settings.value(	SETTINGS_HIDE_INACTIVE,DEFAULT_HIDE_INACTIVE).toBool());
 
-//    ui->lv_activetags->hide(); //  Not being used yet
     ui->newVersionView->hide(); // This defaults to not being shown
 
-	//	QStringList wordList;
-	//	wordList << "alpha" << "omega" << "omicron" << "zeta";
-	//	_taglist = new QCompleter(wordList, this);
-	//	_taglist->setCaseSensitivity(Qt::CaseInsensitive);
-
-
     // Do this late as it triggers action using data
-    //ui->btn_Alphabetical->setChecked(settings.value(SETTINGS_SORT_ALPHA).toBool());
     QObject::connect(model,SIGNAL(dataChanged (const QModelIndex , const QModelIndex )), this, 
     		SLOT(dataInModelChanged(QModelIndex,QModelIndex)));
 
     QObject::connect(model,SIGNAL(dataChanged (const QModelIndex , const QModelIndex )),
     		proxyModel, SIGNAL(dataChanged (const QModelIndex , const QModelIndex )));
-
-
-//   ui->lineEditFilter->setText(settings.value(SETTINGS_SEARCH_STRING,DEFAULT_SEARCH_STRING).toString());
-
-	on_actionSortAZ();
 
 	QObject::connect(ui->actionSync,SIGNAL(triggered()),this,SLOT(on_actionSync_triggered()));
 
@@ -234,19 +229,20 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
 void MainWindow::updateSettings()
-/* This function regroups all the layout issued from settings.
+/* This function regroups all the layout issued from settingsdialog.
 It is intended to be run at startup, and at closing of settings dialog.
 It should be safe to run it at any time.
 */{
 	QSettings settings;
       // Set some defaults if they dont exist
     if(!settings.contains(SETTINGS_LIVE_SEARCH))
-        		settings.setValue(SETTINGS_LIVE_SEARCH,DEFAULT_LIVE_SEARCH);
+        	settings.setValue(SETTINGS_LIVE_SEARCH,DEFAULT_LIVE_SEARCH);
     
 	if (settings.value(SETTINGS_NOTE_ENABLE,DEFAULT_NOTE_ENABLE).toBool())
-		ui->noteView->setVisible(true);
+			ui->noteView->setVisible(true);
 	else 
-		ui->noteView->setVisible(false);
+			ui->noteView->setVisible(false);
+			
     ui->actionStay_On_Top->setChecked(settings.value(SETTINGS_STAY_ON_TOP,DEFAULT_STAY_ON_TOP).toBool());
     setTray();
     stayOnTop();
@@ -257,17 +253,8 @@ It should be safe to run it at any time.
 //    qApp->setFont(f);
     
    task_set->setFileWatch(settings.value(SETTINGS_AUTOREFRESH).toBool(),(QObject*) this);
-//	task_set->recalculate();
 
-//	proxyModel->setContexts(task_set->getContexts());
-			
-	ui->respectThresholdDateAction->setChecked(settings.value(SETTINGS_THRESHOLD_DATES,DEFAULT_THRESHOLD_DATES).toBool());
-	ui->respectThresholdContextAction->setChecked(settings.value(SETTINGS_THRESHOLD_LABELS,DEFAULT_THRESHOLD_LABELS).toBool());
-	ui->thresholdDueAction->setChecked(settings.value(	SETTINGS_DUE_AS_THRESHOLD,DEFAULT_DUE_AS_THRESHOLD).toBool());
-	ui->showAllAction->setChecked(settings.value(	SETTINGS_HIDE_INACTIVE,DEFAULT_HIDE_INACTIVE).toBool());
-
-	
-	todoProxyModel::TodourFilterMode newfval = todoProxyModel::NoFilter;	
+	todoProxyModel::TodourFilterMode newfval = proxyModel->getFilterMode();	
 	if(settings.value(SETTINGS_ENHANCED_PM, DEFAULT_ENHANCED_PM).toBool()) {
 		newfval |= todoProxyModel::EnhancedPM;
 		ui->respectThresholdContextAction->setEnabled(false);
@@ -277,23 +264,16 @@ It should be safe to run it at any time.
 		newfval &= ~todoProxyModel::EnhancedPM;
 		ui->respectThresholdContextAction->setEnabled(true);
 	}
-	proxyModel->setFilterMode(newfval);			
+	proxyModel->setFilterMode(newfval);
 			
 	
 	updateFilter(true);
 
 	ui->sortInactiveAction->setChecked(settings.value(SETTINGS_SEPARATE_INACTIVES,DEFAULT_SEPARATE_INACTIVES).toBool());
-	ui->sortAzAction->setChecked(settings.value(SETTINGS_SORT_AZ,DEFAULT_SORT_AZ).toBool());
-	ui->sortDateAction->setChecked(settings.value(SETTINGS_SORT_IDATE,DEFAULT_SORT_IDATE).toBool());
-	ui->split->restoreState(settings.value("splitterSizes").toByteArray());
+	ui->split->restoreState(settings.value(SETTING_SPLITTER_SIZE).toByteArray());
 	
-	todoProxyModel::TodourSortMode newsval = todoProxyModel::no_sort;	
-	if (ui->sortAzAction->isChecked())	newsval |= todoProxyModel::sort_az;
-	if (ui->sortDateAction->isChecked()) newsval |= todoProxyModel::sort_idate;
-	if (ui->sortInactiveAction->isChecked()) newsval |= todoProxyModel::inactive_last;
+	updateSort();
 	
-	
-	proxyModel->setSortMode(newsval);
 	this->dataInModelChanged(QModelIndex(),QModelIndex());
 	qDebug()<<"Mainwindow: finished update settings"<<endline;
 	}
@@ -428,9 +408,27 @@ void MainWindow::updateFilter(bool force)
 }
 
 void MainWindow::updateSort()
-/*
+/* This function reads the sort submenu status to give the right info to the proxy.
 */{
 	qDebug()<<"MainWindow::updateSort()"<<endline;
+	QSettings settings;
+	todoProxyModel::TodourSortMode newval = proxyModel->getSortMode();
+	
+	if (ui->sortAzAction->isChecked()){
+		newval |= todoProxyModel::sort_az;
+		newval &= ~todoProxyModel::sort_idate;
+		}
+	else if (ui->sortDateAction->isChecked()){
+		newval |= todoProxyModel::sort_idate;
+		newval &=~todoProxyModel::sort_az;
+		}
+
+	if (ui->sortInactiveAction->isChecked()) //inactive last true
+		newval |= todoProxyModel::inactive_last;
+	else
+		newval &= ~todoProxyModel::inactive_last;
+	
+	proxyModel->setSortMode(newval);
 
 }
 
@@ -450,54 +448,6 @@ void MainWindow::setHotkey(){
 
 	}
 
-
-
-void MainWindow::on_actionSortAZ()
-/* sorts the list A to Z
-*/{
-	QSettings settings;
-	ui->sortDateAction->setChecked(false);
-	ui->sortAzAction->setChecked(true);
-	settings.setValue(SETTINGS_SORT_AZ,true);
-	settings.setValue(SETTINGS_SORT_IDATE,false);
-	
-//	proxyModel->sort_by_az();
-	todoProxyModel::TodourSortMode newval = proxyModel->getSortMode();
-	newval |= todoProxyModel::sort_az;
-	newval &= ~todoProxyModel::sort_idate;
-	proxyModel->setSortMode(newval); 
-}
-
-void MainWindow::on_actionSortDate()
-/* sorts the list by input date DECREASING
-*/{
-	QSettings settings;
-	ui->sortAzAction->setChecked(false);
-	ui->sortDateAction->setChecked(true);
-	settings.setValue(SETTINGS_SORT_AZ,false);
-	settings.setValue(SETTINGS_SORT_IDATE,true);
-	
-	todoProxyModel::TodourSortMode newval = proxyModel->getSortMode();
-	newval |= todoProxyModel::sort_idate;
-	newval &=~todoProxyModel::sort_az;
-	proxyModel->setSortMode(newval);
-}
-
-void MainWindow::on_actionSortInactive()
-/* 
-*/{
-	QSettings settings;
-	settings.setValue(SETTINGS_SEPARATE_INACTIVES,ui->sortInactiveAction->isChecked());
-	todoProxyModel::TodourSortMode newval=proxyModel->getSortMode();
-	if (ui->sortInactiveAction->isChecked()) //inactive last true
-		newval |= todoProxyModel::inactive_last;
-	else
-		newval &= ~todoProxyModel::inactive_last;
-	
-	proxyModel->setSortMode(newval);
-
-	//proxyModel->sort_InactiveLast(settings.value(SETTINGS_SEPARATE_INACTIVES,DEFAULT_SEPARATE_INACTIVES).toBool());
-}
 
 
 
@@ -692,11 +642,14 @@ void MainWindow::cleanup()
 	settings.setValue(SETTINGS_DUE_AS_THRESHOLD, ui->thresholdDueAction->isChecked());
 	settings.setValue(SETTINGS_HIDE_INACTIVE, ui->showAllAction->isChecked());
 
+	settings.setValue(SETTINGS_SORT_AZ,true);
+	settings.setValue(SETTINGS_SORT_IDATE,false);
+	settings.setValue(SETTINGS_SEPARATE_INACTIVES,ui->sortInactiveAction->isChecked());
+
    settings.setValue( SETTINGS_GEOMETRY, saveGeometry() );
    settings.setValue( SETTINGS_SAVESTATE, saveState() );
    settings.setValue( SETTINGS_MAXIMIZED, isMaximized() );
-//   settings.setValue(SETTINGS_SEARCH_STRING,ui->lineEditFilter->text());
-  	settings.setValue("splitterSizes", ui->split->saveState());
+  	settings.setValue(SETTING_SPLITTER_SIZE, ui->split->saveState());
 
    if(trayicon!=NULL){
    	delete trayicon;

@@ -267,11 +267,11 @@ void task::updateDescription()
 void task::updateContexts()
 /*
 */{
-	if (complete == Qt::Checked){
-		contexts.clear();
-		thr_contexts.clear();
-		return;
-		}
+	contexts.clear();
+	thr_contexts.clear();
+
+	if (complete == Qt::Checked)	return;
+
 	QRegularExpressionMatchIterator matcher = regex_context.globalMatch(_raw);
 	while (matcher.hasNext()) {
  	   contexts << matcher.next().captured(1); //we don't care about duplicates...
@@ -282,8 +282,8 @@ void task::updateContexts()
  	   thr_contexts << matcher.next().captured(1); //we don't care about duplicates...
 
 
- 	qDebug()<<"task::updateContexts. contexts= "<<contexts<<endline;
-	qDebug()<<"			 thr_contexts= "<<thr_contexts<<endline;
+// 	qDebug()<<"task::updateContexts. contexts= "<<contexts<<endline;
+//	qDebug()<<"			 thr_contexts= "<<thr_contexts<<endline;
 
 }
 
@@ -374,8 +374,7 @@ void task::setColor(QString c)
 		color=QColor::fromString("White");
 
 	this->updateDisplayText();
-//	this->updateDescription();
-//	this->updateContexts();
+
 	_ttag=QDateTime::currentDateTime();
 }
 
@@ -392,9 +391,6 @@ NOT WORKING IN THIS STATE
 */
 {
 qDebug()<<"   task::setDescription not implemented"<<endline;
-	// a définir : que contient exactement le text?
-	// ceci sera sans doute la fonction la plus utilisée: on a modifié le texte de la tache.
-  	//	==> Il faut tout ré-interpréter !
     Q_UNUSED(s);
 }
 
@@ -507,16 +503,14 @@ QString task::toSaveString_pureTODO() const
 void task::recalculateTask(QStringList inactiveflags)
 /* determine if the task is active / inactive based on inactiveflags list of keywords
 */{
-		active=true;
-		for (QString i:inactiveflags){
-			if (displayText.contains(i)){
-				active=false;
-				break;
-				}
+	active=true;
+	for (QString i:inactiveflags){
+		if (displayText.contains(i)){
+			active=false;
+			break;
 			}
-}
-
-
+		}
+	}
 
 QString task::toString() const
 /* returns the full QString for debugging, including all hidden data.

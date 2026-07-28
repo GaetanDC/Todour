@@ -31,23 +31,26 @@ we order based on
 - order-by-az selected
 - order-by-input-date selected
 - inactive-last selected or not
-*/{  
-	if (actual_sort.testFlag(todoProxyModel::sort_az)){
-	 	if ((actual_sort.testFlag(todoProxyModel::inactive_last)) && (sourceModel()->data(left,Qt::UserRole+2).toBool()) != (sourceModel()->data(right,Qt::UserRole+2).toBool())){
-			return (sourceModel()->data(left,Qt::UserRole+2).toBool());
+
+Qt::UserRole+7 = completed
+Qt::UserRole+2 = active
+*/{
+//	qDebug()<<"todoProxyModel::lessThan"<<endline;
+	 	if (actual_sort.testFlag(todoProxyModel::inactive_last)){
+	 		if (sourceModel()->data(left,Qt::UserRole+2).toBool() ^ (sourceModel()->data(right,Qt::UserRole+2).toBool()))
+					return (sourceModel()->data(left,Qt::UserRole+2).toBool()); // sort inactive last
+			
+			if (sourceModel()->data(left,Qt::UserRole+7).toBool() ^ (sourceModel()->data(right,Qt::UserRole+7).toBool()))
+					return (sourceModel()->data(right,Qt::UserRole+7).toBool()); // sort done last		
 			}
-		else{
-			return QString::localeAwareCompare(sourceModel()->data(left,Qt::EditRole).toString(), sourceModel()->data(right,Qt::EditRole).toString())<0;   	
-			}
-	}
+
+		if (actual_sort.testFlag(todoProxyModel::sort_az))
+					return QString::localeAwareCompare(sourceModel()->data(left,Qt::DisplayRole).toString(), sourceModel()->data(right,Qt::DisplayRole).toString())<0;   	
+		
+		if (actual_sort.testFlag(todoProxyModel::sort_idate))
+		    	return sourceModel()->data(left,Qt::UserRole+1).toDateTime() > sourceModel()->data(right,Qt::UserRole+1).toDateTime();
+
 	
-	if (actual_sort.testFlag(todoProxyModel::sort_idate)){
-	 	if ((actual_sort.testFlag(todoProxyModel::inactive_last)) && (sourceModel()->data(left,Qt::UserRole+2).toBool()) != (sourceModel()->data(right,Qt::UserRole+2).toBool())){
-			return (sourceModel()->data(left,Qt::UserRole+2).toBool());}
-		else{	
-	    	return sourceModel()->data(left,Qt::UserRole+1).toDateTime() > sourceModel()->data(right,Qt::UserRole+1).toDateTime();
-			}
-	}
 	qDebug()<<" todoProxyModel::sort - erreur sorting"<<endline;       
 	return QSortFilterProxyModel::lessThan(left,right);
 }
