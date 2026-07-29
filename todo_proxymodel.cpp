@@ -218,5 +218,5 @@ void todoProxyModel::updateFilterText(QString filter)
    this->setFilterRegularExpression(this->filterText);
    endFilterChange(QSortFilterProxyModel::Direction::Rows);
    refresh();
-   qDebug()<<"updateFilterText: filterTexthasProject="<<filterTextHasProject<<endline;
+//   qDebug()<<"updateFilterText: filterTexthasProject="<<filterTextHasProject<<endline;
 }

@@ -295,7 +295,9 @@ We need to update the title + recalculate the tasks active.
     Q_UNUSED(i1)
     
 	task_set->recalculate();
+	QString filter = ui->lineEditFilter->currentText();
 	ui->lineEditFilter->clear();
+//	for (int i=0;i<ui->lineEditFilter->count();i++) ui->lineEditFilter->removeItem(i);
 	ui->lineEditFilter->addItem("");
 
 	if ( settings.value(SETTINGS_ENHANCED_PM,DEFAULT_ENHANCED_PM).toBool()){
@@ -306,6 +308,8 @@ We need to update the title + recalculate the tasks active.
 		proxyModel->setContexts(task_set->getContexts());
 		ui->lineEditFilter->addItems(task_set->getContexts());
 		}
+	
+	ui->lineEditFilter->setCurrentText(filter);
 	
 	//TODO: create a system to identify the change of context at lower level. Only update if changed.
 	proxyModel->refresh();
@@ -416,7 +420,7 @@ void MainWindow::updateFilter(bool force)
 void MainWindow::updateSort()
 /* This function reads the sort submenu status to give the right info to the proxy.
 */{
-	qDebug()<<"MainWindow::updateSort()"<<endline;
+//	qDebug()<<"MainWindow::updateSort()"<<endline;
 	QSettings settings;
 	todoProxyModel::TodourSortMode newval = proxyModel->getSortMode();
 	
