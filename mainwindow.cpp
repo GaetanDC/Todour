@@ -166,6 +166,7 @@ MainWindow::MainWindow(QWidget *parent) :
     	connect(ui->respectThresholdDateAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
 		connect(ui->respectThresholdContextAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
    	connect(ui->thresholdDueAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
+   	connect(ui->hideInactiveAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
    	connect(ui->showAllAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
    	connect(ui->lineEditFilter, SIGNAL(currentTextChanged(QString)),this, SLOT(updateFilterText(QString)));
  		connect(ui->lineEditNew, SIGNAL(returnPressed()),this, SLOT(on_addButton_clicked()));
@@ -205,7 +206,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->respectThresholdDateAction->setChecked(settings.value(SETTINGS_THRESHOLD_DATES,DEFAULT_THRESHOLD_DATES).toBool());
 	ui->respectThresholdContextAction->setChecked(settings.value(SETTINGS_THRESHOLD_LABELS,DEFAULT_THRESHOLD_LABELS).toBool());
 	ui->thresholdDueAction->setChecked(settings.value(	SETTINGS_DUE_AS_THRESHOLD,DEFAULT_DUE_AS_THRESHOLD).toBool());
-	ui->showAllAction->setChecked(settings.value(	SETTINGS_HIDE_INACTIVE,DEFAULT_HIDE_INACTIVE).toBool());
+	ui->hideInactiveAction->setChecked(settings.value(	SETTINGS_HIDE_INACTIVE,DEFAULT_HIDE_INACTIVE).toBool());
+	ui->showAllAction->setChecked(settings.value(SETTINGS_SHOW_ALL,DEFAULT_SHOW_ALL).toBool());
 
     ui->newVersionView->hide(); // This defaults to not being shown
 
@@ -260,18 +262,11 @@ It should be safe to run it at any time.
     
    task_set->setFileWatch(settings.value(SETTINGS_AUTOREFRESH).toBool(),(QObject*) this);
 
-	todoProxyModel::TodourFilterMode newfval = proxyModel->getFilterMode();	
-	if(settings.value(SETTINGS_ENHANCED_PM, DEFAULT_ENHANCED_PM).toBool()) {
-		newfval |= todoProxyModel::EnhancedPM;
-		ui->respectThresholdContextAction->setEnabled(false);
-		qDebug()<<"Maiwindow::updateSettings - thr_context disabled"<<endline;
-		}
-	else {
-		newfval &= ~todoProxyModel::EnhancedPM;
-		ui->respectThresholdContextAction->setEnabled(true);
-	}
+	todoProxyModel::TodourFilterMode newfval=proxyModel->getFilterMode();
+	this->enhancedPMMode = settings.value(SETTINGS_ENHANCED_PM, DEFAULT_ENHANCED_PM).toBool();
+	if (this->enhancedPMMode) newfval |= todoProxyModel::EnhancedPM;
+	else newfval &= ~todoProxyModel::EnhancedPM;		
 	proxyModel->setFilterMode(newfval);
-			
 	
 	updateFilter(true);
 
@@ -375,18 +370,20 @@ void MainWindow::updateFilter(bool force)
 	todoProxyModel::TodourFilterMode currentMode = proxyModel->getFilterMode();
 	todoProxyModel::TodourFilterMode newval=proxyModel->getFilterMode();
 	
-	if (ui->todaysViewAction->isChecked()){
+	if (ui->todaysViewAction->isChecked()) {
 		newval |= todoProxyModel::TodaysView;
 		ui->respectThresholdDateAction->setEnabled(false);
 		ui->respectThresholdContextAction->setEnabled(false);
    	ui->thresholdDueAction->setEnabled(false);
+   	ui->hideInactiveAction->setEnabled(false);
    	ui->showAllAction->setEnabled(false);
 		}
-	else{
+	else {
 		newval &=  ~todoProxyModel::TodaysView;
 		ui->respectThresholdDateAction->setEnabled(true);
-		ui->respectThresholdContextAction->setEnabled(true);
+		ui->respectThresholdContextAction->setEnabled( !this->enhancedPMMode);
    	ui->thresholdDueAction->setEnabled(true);
+   	ui->hideInactiveAction->setEnabled(true);
    	ui->showAllAction->setEnabled(true);
 		}
 
@@ -399,18 +396,33 @@ void MainWindow::updateFilter(bool force)
 			newval |= todoProxyModel::HideThresholdContext;
 	else
 			newval &= ~todoProxyModel::HideThresholdContext;
-
-			
+		
 	if (ui->thresholdDueAction->isChecked())
 		newval |= todoProxyModel::HideUndue;
 	else
 		newval &= ~todoProxyModel::HideUndue;
 
-
-	if (ui->showAllAction->isChecked())
-		newval |= todoProxyModel::ShowAll;
+	if (ui->hideInactiveAction->isChecked())
+		newval |= todoProxyModel::HideInactive;
 	else
+		newval &= ~todoProxyModel::HideInactive;
+
+	if (ui->showAllAction->isChecked()) {
+		newval |= todoProxyModel::ShowAll;
+		ui->respectThresholdDateAction->setEnabled(false);
+		ui->respectThresholdContextAction->setEnabled(false);
+   	ui->thresholdDueAction->setEnabled(false);
+   	ui->hideInactiveAction->setEnabled(false);
+   	ui->todaysViewAction->setEnabled(false);
+   	}
+	else {
 		newval &= ~todoProxyModel::ShowAll;
+		ui->respectThresholdDateAction->setEnabled(true);
+		ui->respectThresholdContextAction->setEnabled(! this->enhancedPMMode);
+   	ui->thresholdDueAction->setEnabled(true);
+   	ui->hideInactiveAction->setEnabled(true);
+   	ui->todaysViewAction->setEnabled(true);
+   	}
 
 	if (force || newval != currentMode)
 			proxyModel->setFilterMode(newval);
@@ -650,7 +662,8 @@ void MainWindow::cleanup()
    settings.setValue(SETTINGS_THRESHOLD_DATES,ui->respectThresholdDateAction->isChecked());
    settings.setValue(SETTINGS_THRESHOLD_LABELS,ui->respectThresholdContextAction->isChecked());
 	settings.setValue(SETTINGS_DUE_AS_THRESHOLD, ui->thresholdDueAction->isChecked());
-	settings.setValue(SETTINGS_HIDE_INACTIVE, ui->showAllAction->isChecked());
+	settings.setValue(SETTINGS_HIDE_INACTIVE, ui->hideInactiveAction->isChecked());
+	settings.setValue(SETTINGS_SHOW_ALL, ui->showAllAction->isChecked());
 
 	settings.setValue(SETTINGS_SORT_AZ,true);
 	settings.setValue(SETTINGS_SORT_IDATE,false);

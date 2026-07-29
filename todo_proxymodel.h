@@ -29,6 +29,7 @@ enum iTaskFilterMode{ //ShowAll, Hide date th, Hide Context th, enhanced pm, due
 	HideThresholdDate=0x1,
 	HideThresholdContext=0x2,
 	HideUndue=0x4,
+	HideInactive=0x8,
 	TodaysView=0x10,
 	EnhancedPM=0x20,
 	ShowAll=0x80

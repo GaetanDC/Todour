@@ -123,8 +123,6 @@ private:
 	taskset* task_set;
 	noteset* note_set;
 	QUndoStack* _undoStack;
-           
-    QCompleter* _taglist;
-    
+   bool enhancedPMMode; 
 };
 #endif // MAINWINDOW_H

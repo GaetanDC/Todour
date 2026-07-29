@@ -63,6 +63,8 @@
         </property>
        </spacer>
       </item>
+
+<!-- This is the sort submenu -->
      <item>
        <widget class="QToolButton" name="btn_Alphabetical">
         <property name="toolTip">
@@ -106,6 +108,8 @@
   		
        </widget>
       </item>
+
+<!-- This is the filter submenu -->
     <item>
        <widget class="QToolButton" name="btn_Filter">
         <property name="toolTip">
@@ -122,6 +126,7 @@
         	<addaction name="respectThresholdDateAction"/>
         	<addaction name="respectThresholdContextAction"/>
         	<addaction name="thresholdDueAction"/>
+        	<addaction name="hideInactiveAction"/>
         	<addaction name="showAllAction"/>
         </widget>
          <action name="todaysViewAction">
@@ -158,6 +163,14 @@
    		  <bool>true</bool>
    		 </property>
   		</action>
+        <action name="hideInactiveAction">
+   		 <property name="text">
+    	  <string>Hide Inactive</string>
+   		 </property>
+   		 <property name="checkable">
+   		  <bool>true</bool>
+   		 </property>
+  		</action> 		
         <action name="showAllAction">
    		 <property name="text">
     	  <string>Show all tasks</string>
@@ -168,7 +181,7 @@
   		</action> 		
        </widget>
       </item>
-
+<!-- This is the filter combo box -->
       <item>
        <widget class="QComboBox" name="lineEditFilter">
         <property name="minimumSize">

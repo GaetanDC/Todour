@@ -68,9 +68,24 @@ We filter based on
 	QModelIndex source_index = sourceModel()->index(sourceRow, 1, sourceParent);
 	QDateTime t_dueDate = sourceModel()->data(source_index,Qt::UserRole+4).toDateTime();
 
-// hide inactive if not ShowAll
-	if (!actual_filter.testFlag(todoProxyModel::ShowAll) ||actual_filter.testFlag(todoProxyModel::TodaysView))
+// if ShowAll, rely on text.
+	if (actual_filter.testFlag(todoProxyModel::ShowAll))
+			return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
+
+// hide inactive if not ShowInactive
+	if (actual_filter.testFlag(todoProxyModel::HideInactive) ||actual_filter.testFlag(todoProxyModel::TodaysView))
 			if (!sourceModel()->data(source_index,Qt::UserRole+2).toBool())// isActive()
+					if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
+
+			// Threshold date.
+	if (actual_filter.testFlag(todoProxyModel::HideThresholdDate) && 
+			sourceModel()->data(source_index,Qt::UserRole+3).toDateTime().isValid() &&
+			sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())
+					if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
+			// Due as Threshold
+	if (actual_filter.testFlag(todoProxyModel::HideUndue) && 
+			t_dueDate.isValid() &&
+			t_dueDate > dueWarningDate)
 					if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
 
 
@@ -83,17 +98,7 @@ We filter based on
 			if ( (! sourceModel()->data(source_index,Qt::UserRole+5).toStringList().empty())
 					|| (! sourceModel()->data(source_index,Qt::UserRole+8).toStringList().empty() ) )
 							return false;
-					// Threshold date.
-			if (actual_filter.testFlag(todoProxyModel::HideThresholdDate) && 
-					sourceModel()->data(source_index,Qt::UserRole+3).toDateTime().isValid() &&
-					sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())
-							if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
-					// Due as Threshold
-			if (actual_filter.testFlag(todoProxyModel::HideUndue) && 
-					t_dueDate.isValid() &&
-					t_dueDate > dueWarningDate){
-							if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
-					}
+					
 			}
 		}
 	else { // no enhancedPM, 
@@ -105,21 +110,7 @@ We filter based on
 						)
 							return false;
 				}
-			}
-						// Threshold date.
-		if (actual_filter.testFlag(todoProxyModel::HideThresholdDate) && 
-				sourceModel()->data(source_index,Qt::UserRole+3).toDateTime().isValid() &&
-				sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())
-						if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
-
-						// Due as Threshold
-		if (actual_filter.testFlag(todoProxyModel::HideUndue) && 
-				t_dueDate.isValid() &&
-				t_dueDate > dueWarningDate){
-						if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
-				}
-
-
+			}				
 		}
 	if (actual_filter.testFlag(todoProxyModel::TodaysView)){ // hide inactive, threshold, D-priority, context-threshold, complete
 		if (sourceModel()->data(source_index,Qt::UserRole+7) == Qt::Checked) return false; // no Checked task
