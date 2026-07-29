@@ -64,7 +64,7 @@ emit some signels
 {
    QTextStream out;
 	if (! _NoteFile->open(QIODevice::WriteOnly | QIODevice::Text)){
-		emit WriteError("Could not open " + _NoteFilePath);
+		emit WriteError(tr("Could not open ") + _NoteFilePath);
 		return;
 		}
 	out.setDevice(_NoteFile);

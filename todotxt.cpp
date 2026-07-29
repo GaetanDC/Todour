@@ -43,7 +43,7 @@ void todotxt::reloadRequest()
     _TodoFile->open(QIODevice::ReadOnly | QIODevice::Text);
 
     if (!_TodoFile->isOpen()){
-		emit ReadError("Todorxt: unable to open file");
+		emit ReadError(tr("Todotxt: unable to open file"));
     	return;
     }
 	emit DataAvailable();
@@ -92,7 +92,7 @@ return 0 : sucess.
 		    if (append) result=_TodoFile->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
 			else result =_TodoFile->open(QIODevice::WriteOnly | QIODevice::Text);
 			if (!result){
-				emit WriteError("todotxt Write: unable to open todo file");
+				emit WriteError(tr("todotxt Write: unable to open todo file"));
 				return;
 			}
 			out.setDevice(_TodoFile);
@@ -101,7 +101,7 @@ return 0 : sucess.
 		    if (append) result=_DoneFile->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
 		    else result=_DoneFile->open(QIODevice::WriteOnly | QIODevice::Text);
 			if (!result){
-				emit WriteError("todotxt Write: unable to open done file");
+				emit WriteError(tr("todotxt Write: unable to open done file"));
 				return;
 			}
 			out.setDevice(_DoneFile);
@@ -110,13 +110,13 @@ return 0 : sucess.
 		    if (append) result=_DeleteFile->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
 		    else result=_DeleteFile->open(QIODevice::WriteOnly | QIODevice::Text);
 			if (!result){
-				emit WriteError("todotxt Write: unable to open deleted file");
+				emit WriteError(tr("todotxt Write: unable to open deleted file"));
 				return;
 			}
 			out.setDevice(_DeleteFile);
 		    break;
 	default: 
-		emit WriteError("todotxt Write: unkown file type");
+		emit WriteError(tr("todotxt Write: unkown file type"));
 		return;
 	}
 	
