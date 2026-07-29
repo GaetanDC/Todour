@@ -95,10 +95,11 @@ We filter based on
 		if (filterTextHasProject)//the filtertext contains a project (+...)
 				return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
 		else{ // else, hide all the +
+			if (t_dueDate.isValid() && t_dueDate < dueWarningDate)
+					return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
 			if ( (! sourceModel()->data(source_index,Qt::UserRole+5).toStringList().empty())
 					|| (! sourceModel()->data(source_index,Qt::UserRole+8).toStringList().empty() ) )
-							return false;
-					
+							return false;					
 			}
 		}
 	else { // no enhancedPM, 
@@ -148,8 +149,7 @@ void todoProxyModel::setFilterMode(TodourFilterMode mode)
 
 	QSettings settings;	
 	beginFilterChange();
-	dueWarningDate=QDateTime::currentDateTime().addDays(-settings.value(SETTINGS_DUE_WARNING,DEFAULT_DUE_WARNING).toInt());
-
+	dueWarningDate=QDateTime::currentDateTime().addDays(settings.value(SETTINGS_DUE_WARNING,DEFAULT_DUE_WARNING).toInt());
    endFilterChange(QSortFilterProxyModel::Direction::Rows);
 	refresh();
 }
