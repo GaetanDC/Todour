@@ -58,7 +58,6 @@ private slots:
 	 void on_dueTodayAction_triggered();
 
     void on_hotkey();
-    void on_context_lock_toggled(bool checked);
 
     void iconActivated(QSystemTrayIcon::ActivationReason reason);
     void cleanup(); // Need to have a quit slot of my own to save settings and so on.

@@ -93,8 +93,24 @@ MainWindow::MainWindow(QWidget *parent) :
     awesome->initFontAwesome();     // This line is important as it loads the font and initializes the named icon map
     awesome->setDefaultOption("scale-factor",0.9);
     QVariantMap options;
-	options.insert("color-active" , QColor(255, 0 ,0));
-	options.insert("color-active-off",QApplication::palette().color(QPalette::Normal, QPalette::ButtonText));
+	 //options.insert("color",QApplication::palette().color(QPalette::Normal, QPalette::ButtonText));
+//	 options.insert("color-selected" , "#FF0000");
+//	 options.insert("color-active" , "#FF0000");
+//	 options.insert("color-selected-off" , "#FF0000");
+
+options.insert("color","red");
+options.insert("color-disabled","red");
+options.insert("color-active","red");
+options.insert("color-off",QApplication::palette().color(QPalette::Normal, QPalette::Text));
+options.insert("color-active-off",QApplication::palette().color(QPalette::Normal, QPalette::Text));
+
+
+
+
+
+
+ 
+//	 options.insert("color-disabled" , QApplication::palette().color(QPalette::Normal, QPalette::Text));
 	
     ui->btn_Alphabetical->setIcon(awesome->icon(fa::fa_solid, fa::fa_arrow_down_a_z ));
     ui->btn_Filter->setIcon(awesome->icon(fa::fa_solid, fa::fa_filter));
@@ -674,6 +690,8 @@ void MainWindow::cleanup()
    settings.setValue( SETTINGS_MAXIMIZED, isMaximized() );
   	settings.setValue(SETTING_SPLITTER_SIZE, ui->split->saveState());
 
+    settings.setValue(SETTINGS_CONTEXT_LOCK,ui->context_lock->isChecked());
+    
    if(trayicon!=NULL){
    	delete trayicon;
    	trayicon = NULL;
@@ -691,12 +709,6 @@ void MainWindow::closeEvent(QCloseEvent *ev)
         cleanup();
         ev->accept();
     }
-}
-
-void MainWindow::on_context_lock_toggled(bool checked)
-/* */{
-	QSettings settings;
-    settings.setValue(SETTINGS_CONTEXT_LOCK,checked);
 }
 
 void MainWindow::on_pb_closeVersionBar_clicked()

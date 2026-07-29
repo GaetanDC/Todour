@@ -209,6 +209,8 @@ border-radius: 5px;
         </property>
        </widget>
       </item>
+      
+<!-- Context lock button -->
       <item>
        <widget class="QPushButton" name="context_lock">
         <property name="toolTip">
