@@ -140,7 +140,7 @@
 
         <action name="respectThresholdDateAction">
    		 <property name="text">
-    	  <string>Respect threshold dates</string>
+    	  <string>Hide threshold dates</string>
    		 </property>
    		 <property name="checkable">
    		  <bool>true</bool>
@@ -148,7 +148,7 @@
   		</action>
         <action name="respectThresholdContextAction">
    		 <property name="text">
-    	  <string>Respect threshold Contexts</string>
+    	  <string>Hide threshold Contexts</string>
    		 </property>
    		 <property name="checkable">
    		  <bool>true</bool>

@@ -97,6 +97,8 @@ We filter based on
 		else{ // else, hide all the +
 			if (t_dueDate.isValid() && t_dueDate < dueWarningDate)
 					return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
+			if (!actual_filter.testFlag(todoProxyModel::HideThresholdContext))
+					return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
 			if ( (! sourceModel()->data(source_index,Qt::UserRole+5).toStringList().empty())
 					|| (! sourceModel()->data(source_index,Qt::UserRole+8).toStringList().empty() ) )
 							return false;					

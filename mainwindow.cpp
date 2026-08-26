@@ -397,7 +397,9 @@ void MainWindow::updateFilter(bool force)
 	else {
 		newval &=  ~todoProxyModel::TodaysView;
 		ui->respectThresholdDateAction->setEnabled(true);
-		ui->respectThresholdContextAction->setEnabled( !this->enhancedPMMode);
+//		ui->respectThresholdContextAction->setEnabled( !this->enhancedPMMode);
+		ui->respectThresholdContextAction->setEnabled(true);
+
    	ui->thresholdDueAction->setEnabled(true);
    	ui->hideInactiveAction->setEnabled(true);
    	ui->showAllAction->setEnabled(true);
@@ -434,7 +436,8 @@ void MainWindow::updateFilter(bool force)
 	else {
 		newval &= ~todoProxyModel::ShowAll;
 		ui->respectThresholdDateAction->setEnabled(true);
-		ui->respectThresholdContextAction->setEnabled(! this->enhancedPMMode);
+//		ui->respectThresholdContextAction->setEnabled(! this->enhancedPMMode);
+		ui->respectThresholdContextAction->setEnabled(true);
    	ui->thresholdDueAction->setEnabled(true);
    	ui->hideInactiveAction->setEnabled(true);
    	ui->todaysViewAction->setEnabled(true);
