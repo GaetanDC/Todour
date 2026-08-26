@@ -29,7 +29,8 @@ taskset::~taskset()
 void taskset::addTask(task* _t)
 /* 
 */{
-  	if (_t!=nullptr) content.push_back(_t);    
+  	if (_t!=nullptr) content.push_back(_t);
+  	this->recalculate();
 }
 
 task* taskset::getTask(QUuid tuid)

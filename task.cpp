@@ -31,7 +31,7 @@ static QRegularExpression regex_inputdate("^((?:x\\s)|(?:x\\s+"+DATE_PAT+"\\s))?
 
 static QRegularExpression regex_todo_line("((^(?:x )+("+DATE_PAT+"(?:\\s+|$))?)+(?<donedate>"+DATE_PAT+"(?:\\s*|$))?)?(?<priority>"+regex_priority.pattern()+")?(?<inputdate>"+DATE_PAT+"(?:\\s*|$))?(.*)");
 
-static QRegularExpression regex_context("(?:\\s+)((\\@[^\\s]+)|(\\+[^\\s]+))(?#\\s+|$)");
+static QRegularExpression regex_context("(?:\\s+|^)((\\@[^\\s]+)|(\\+[^\\s]+))(?#\\s+|$)");
 
 static QRegularExpression regex_progress("\\s+(?:\\#(?<p>\\d\\d)\\%)(?#\\s+|$)");
 
@@ -282,8 +282,9 @@ void task::updateContexts()
  	   thr_contexts << matcher.next().captured(1); //we don't care about duplicates...
 
 
-// 	qDebug()<<"task::updateContexts. contexts= "<<contexts<<endline;
-//	qDebug()<<"			 thr_contexts= "<<thr_contexts<<endline;
+// 	qDebug()<<"task::updateContexts. raw<"<<_raw<<endline;
+// 	qDebug()<<"        contexts= "<<contexts<<endline;
+//		qDebug()<<"        thr_contexts= "<<thr_contexts<<endline;
 
 }
 
