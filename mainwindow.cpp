@@ -797,13 +797,15 @@ void MainWindow::on_actionDuplicate()
 */{
 	QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
 	if (! indexes.isEmpty()){
-		model->startModelChange();
- 		_undoStack->beginMacro("addition"); // do not change this text
- 		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
-				model->safeAdd(task_set->at(i->row()));
-		_undoStack->endMacro(); 
-		model->endModelChange();		
-		updateTitle();
+		ui->lineEditNew->setText(task_set->at(indexes.begin()->row())->getRaw());
+		ui->lineEditNew->setFocus(Qt::OtherFocusReason);
+//		model->startModelChange();
+//		_undoStack->beginMacro("addition"); // do not change this text
+// 		for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
+//				model->safeAdd(task_set->at(i->row()));
+//		_undoStack->endMacro(); 
+//		model->endModelChange();		
+//		updateTitle();
 	}
  }
 
