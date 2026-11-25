@@ -81,6 +81,7 @@ QString taskset::toString()
 void taskset::backendDataLoaded()
 /* Called when the backend is ready to supply data.
 */{
+	content.clear();
   	todo->getAllTask(content);  
 	recalculate();
 }

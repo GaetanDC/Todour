@@ -49,7 +49,8 @@ public:
 signals:
 	void dataSavedOK();
 	void backendError(QString);
-	
+	void DataChanged();
+		
 public slots:
     void backendDataLoaded();
     void recalculate();
@@ -88,6 +89,7 @@ signals:
 	void backendError(QString txt);
 	void dataSavedOK();
 	void updateText(QString txt);
+	void DataChanged();
 
 private:
 	notetxt* notes;

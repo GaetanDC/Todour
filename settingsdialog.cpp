@@ -101,10 +101,7 @@ void SettingsDialog::on_buttonBox_accepted()
     settings.setValue(SETTINGS_HOTKEY_ENABLE,ui->cb_hotKey->isChecked());
     settings.setValue(SETTINGS_DELETED_FILE,ui->cb_deletedfile->isChecked());
     settings.setValue(SETTINGS_ENHANCED_PM,ui->cb_enhancedPM->isChecked());
-//    settings.setValue(SETTINGS_THRESHOLD,ui->cb_threshold->isChecked());
 //    settings.setValue(SETTINGS_THRESHOLD_LABELS,ui->cb_threshold_label->isChecked());
-    //	settings.setValue(SETTINGS_THRESHOLD_INACTIVE,ui->cb_threshold_inactive->isChecked());
-    //	settings.setValue(SETTINGS_DUE_AS_THRESHOLD,ui->cb_due_as_threshold->isChecked());
     settings.setValue(SETTINGS_TRAY_ENABLED,ui->cb_tray_icon->isChecked());
     settings.setValue(SETTINGS_DUE,ui->cb_due->isChecked());
     settings.setValue(SETTINGS_DUE_WARNING,ui->sb_due_warning->value());

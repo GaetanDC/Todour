@@ -10,7 +10,9 @@
 
 TodoTableModel::TodoTableModel(taskset* _tasklist, QUndoStack* _undo, QObject *parent) :
     QAbstractTableModel(parent), tasklist(_tasklist), undoS(_undo)
-{}
+/* */{
+  connect(tasklist,SIGNAL(DataChanged()),this,SLOT(refresh()));
+}
 
 TodoTableModel::~TodoTableModel(){}
 
@@ -281,13 +283,13 @@ void TodoTableModel::refresh()
 //    todo->refresh();
 //    todo_data.clear();
 
-//    QAbstractItemModel::beginResetModel();
+    QAbstractItemModel::beginResetModel();
 //    QAbstractItemModel::endResetModel();
 
 	tasklist->recalculate();
 //   emit dataChanged(createIndex(0, 0),createIndex(999, 1));
 
-//    QAbstractItemModel::endResetModel();
+    QAbstractItemModel::endResetModel();
 }
 
 QString TodoTableModel::toString()

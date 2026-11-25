@@ -26,7 +26,6 @@ public:
 
 //	 inline task* getTask(QModelIndex index) {return (tasklist->at(index.row()));};
 
-    void refresh();    
 //    void refreshActive(); //cycle through all task to recalculate the active state
 	QString toString();
 
@@ -54,6 +53,8 @@ signals:
 
 public slots:
 	void dataChanged(QModelIndex index);
+   void refresh();    
+
 private:
 	QUndoStack* undoS;
 

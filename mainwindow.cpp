@@ -224,9 +224,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->hideInactiveAction->setChecked(settings.value(	SETTINGS_HIDE_INACTIVE,DEFAULT_HIDE_INACTIVE).toBool());
 	
 	ui->defaultViewAction->setChecked(true);
-	ui->todaysViewAction->setChecked(settings.value(SETTINGS_TODAYS_VIEW,DEFAULT_TODAYS_VIEW).toBool());
-	ui->projectViewAction->setChecked(settings.value(SETTINGS_PROJECT_VIEW,DEFAULT_PROJECT_VIEW).toBool());
-	ui->showAllAction->setChecked(settings.value(SETTINGS_SHOW_ALL,DEFAULT_SHOW_ALL).toBool());
+//check this
 
     ui->newVersionView->hide(); // This defaults to not being shown
     // Do this late as it triggers action using data
@@ -673,7 +671,6 @@ void MainWindow::cleanup()
    settings.setValue(SETTINGS_THRESHOLD_LABELS,ui->respectThresholdContextAction->isChecked());
 	settings.setValue(SETTINGS_DUE_AS_THRESHOLD, ui->thresholdDueAction->isChecked());
 	settings.setValue(SETTINGS_HIDE_INACTIVE, ui->hideInactiveAction->isChecked());
-	settings.setValue(SETTINGS_SHOW_ALL, ui->showAllAction->isChecked());
 
 	settings.setValue(SETTINGS_SORT_AZ,true);
 	settings.setValue(SETTINGS_SORT_IDATE,false);
