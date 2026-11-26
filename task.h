@@ -69,37 +69,41 @@ public:
 	void setRaw(QString s);
 	void setProgress(int);
 	
-	inline QDateTime const getDueDate() {return dueD;};
-	inline QDateTime const getThresholdDate() {return thrD;};
-	inline QDateTime const getInputDate() {return inputD;};
-	inline QChar const getPriority() {return priority;};
-	inline QColor const *getColor() {return &color;};
-	inline QUuid getTuid() const{return _tuid;}
-	inline Qt::CheckState isComplete() const {return complete;};
-	inline QString getDisplayText() const {return displayText;};	/* text for display in todour*/
-	inline QString getRaw() const {return _raw;};	/* returns the full text, used for edit */
-	inline QString getEditText() const {return _raw;};/* text for edit in Todour*/
-	inline QString getDescription() const {return description;}; 	/* text for display in future tool. return only the descriptive part of the text, without t: due: color: utid: ...   TODO*/
-	inline QDateTime getTimeStamp() const {return _ttag;}  //for future sync
-	inline bool operator==(task &t){return t.getTuid()==_tuid;}
-	inline QStringList getContexts(){return contexts;};
-	inline QStringList getThresholdContexts(){return thr_contexts;};
-	inline int getProgress() const {return progress;};
-	
-	inline bool isActive() const {return active;};
+	const QDateTime& getDueDate() const noexcept {return dueD;};
+	const QDateTime& getThresholdDate() const noexcept {return thrD;};
+	const QDateTime& getInputDate() const noexcept {return inputD;};
+	const QDateTime& getTimeStamp() const noexcept {return _ttag;}  //for future sync
+
+	const QStringList& getContexts() const noexcept {return contexts;};
+	const QStringList& getThresholdContexts() const noexcept {return thr_contexts;};
+
+	const QString& getDisplayText() const noexcept {return displayText;};	/* text for display in todour*/
+	const QString& getRaw() const noexcept {return _raw;};	/* returns the full text, used for edit */
+	const QString& getEditText() const noexcept {return _raw;};/* text for edit in Todour*/
+	const QString& getDescription() const noexcept {return description;}; 	/* text for display in future tool. return only the descriptive part of the text, without t: due: color: utid: ...   TODO*/
+
+	const QColor* getColor() const noexcept {return &color;};
+
+
+	QChar getPriority() const noexcept {return priority;};
+	QUuid getTuid() const noexcept {return _tuid;}
+	Qt::CheckState isComplete() const noexcept {return complete;};
+	bool operator==(task &t) const noexcept {return t.getTuid()==_tuid;}
+	int getProgress() const noexcept {return progress;};
+	bool isActive() const noexcept {return active;};
 
 
 	void recalculateTask(QStringList inactiveflags);
 	
-	QString getURL() const;	
+	QString getURL() const noexcept;	
 	
-	QString toSaveString() const;
+	QString toSaveString() const noexcept;
 	/*returns the full QString for saving, including all hidden data.*/
 	
-	QString toSaveString_pureTODO() const;
+	QString toSaveString_pureTODO() const noexcept;
 	/*returns the full QString for saving, including all hidden data.*/
 	
-	QString toString() const;
+	QString toString() const noexcept;
 	/*returns the full QString for debugging*/
 
 // === static functions ===
