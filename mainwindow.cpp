@@ -292,21 +292,21 @@ We need to update the title + recalculate the tasks active.
     Q_UNUSED(i1)
     
 	task_set->recalculate();
-//	QString filter = ui->lineEditFilter->currentText();
-//	ui->lineEditFilter->clear();
+	QString filter = ui->lineEditFilter->currentText();
+	ui->lineEditFilter->clear();
 //	for (int i=0;i<ui->lineEditFilter->count();i++) ui->lineEditFilter->removeItem(i);
-//	ui->lineEditFilter->addItem("");
+	ui->lineEditFilter->addItem("");
 
-//	if ( ui->projectViewAction->isChecked()){
-//		proxyModel->setContexts(task_set->getFullContexts());
-//		ui->lineEditFilter->addItems(task_set->getFullContexts());
-//		}
-//	else{
-//		proxyModel->setContexts(task_set->getContexts());
-//		ui->lineEditFilter->addItems(task_set->getContexts());
-//		}
+	if ( ui->projectViewAction->isChecked()){
+		proxyModel->setContexts(task_set->getFullContexts());
+		ui->lineEditFilter->addItems(task_set->getFullContexts());
+		}
+	else{
+		proxyModel->setContexts(task_set->getContexts());
+		ui->lineEditFilter->addItems(task_set->getContexts());
+		}
 	
-//	ui->lineEditFilter->setCurrentText(filter);
+	ui->lineEditFilter->setCurrentText(filter);
 	
 	//TODO: create a system to identify the change of context at lower level. Only update if changed.
 	proxyModel->refresh();

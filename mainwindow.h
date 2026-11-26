@@ -12,7 +12,7 @@
 #include <QClipboard>
 #include <QCompleter>
 #include <QtAwesome.h>	//used for fonts and icons
-
+#include <QStringListModel>
 
 #include <memory>
 
@@ -93,6 +93,7 @@ private slots:
 private:
     todoProxyModel *proxyModel;
 	fa::QtAwesome* awesome;
+	
     void setTray();
     void closeEvent(QCloseEvent *ev);
     Ui::MainWindow *ui;
