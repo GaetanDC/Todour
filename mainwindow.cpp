@@ -156,13 +156,13 @@ MainWindow::MainWindow(QWidget *parent) :
 	    	
 	connect(ui->sortAzAction, SIGNAL(triggered()), this, SLOT(updateSort()));
 	connect(sortActionGroup, SIGNAL(triggered(QAction*)),this,SLOT(updateSort()));
-		
-	viewActionGroup = new QActionGroup(ui->btn_Filter);
-	 ui->defaultViewAction->setActionGroup(viewActionGroup);
-	 ui->todaysViewAction->setActionGroup(viewActionGroup);
-	 ui->projectViewAction->setActionGroup(viewActionGroup);
-	 ui->showAllAction->setActionGroup(viewActionGroup);
-   
+    	
+   viewActionGroup = new QActionGroup(ui->btn_Filter);
+	ui->defaultViewAction->setActionGroup(viewActionGroup);
+	ui->todaysViewAction->setActionGroup(viewActionGroup);
+	ui->projectViewAction->setActionGroup(viewActionGroup);
+	ui->showAllAction->setActionGroup(viewActionGroup);
+
 	connect(ui->respectThresholdDateAction, SIGNAL(triggered()), this, SLOT(updateFilter()));    	
 	connect(ui->respectThresholdContextAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
 	connect(ui->thresholdDueAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
@@ -260,6 +260,7 @@ It should be safe to run it at any time.
 //    f.setPointSize(settings.value(SETTINGS_FONT_SIZE,DEFAULT_FONT_SIZE).toInt());
 //    qApp->setFont(f);
    
+
 	QString savedFilter=settings.value(SETTINGS_LAST_FILTER, DEFAULT_LAST_FILTER).toString();
 	if (!savedFilter.isEmpty()){
 		for (QAction *a : viewActionGroup->actions()){
