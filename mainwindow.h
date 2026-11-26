@@ -11,6 +11,8 @@
 #include <QUndoStack>
 #include <QClipboard>
 #include <QCompleter>
+#include <QtAwesome.h>	//used for fonts and icons
+
 
 #include <memory>
 
@@ -67,7 +69,8 @@ private slots:
     void on_noteView_customContextMenuRequested(const QPoint &pos);
     		
     void on_actionStay_On_Top_changed();
-    		
+    void handle_contextlock_change();
+    
 	 void dataInModelChanged(QModelIndex,QModelIndex);
     
    void on_actionEdit();
@@ -89,7 +92,7 @@ private slots:
 
 private:
     todoProxyModel *proxyModel;
-
+	fa::QtAwesome* awesome;
     void setTray();
     void closeEvent(QCloseEvent *ev);
     Ui::MainWindow *ui;

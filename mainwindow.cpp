@@ -15,7 +15,6 @@
 
 #include <QShortcut>
 #include <QCloseEvent>
-#include <QtAwesome.h>	//used for fonts and icons
 #include <QPalette>
 
 #include <QSystemTrayIcon>
@@ -78,23 +77,9 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
     // Fix some font-awesome stuff
-    fa::QtAwesome* awesome = new fa::QtAwesome(qApp);
+    awesome = new fa::QtAwesome(qApp);
     awesome->initFontAwesome();     // This line is important as it loads the font and initializes the named icon map
     awesome->setDefaultOption("scale-factor",0.9);
-    QVariantMap options;
-	 //options.insert("color",QApplication::palette().color(QPalette::Normal, QPalette::ButtonText));
-//	 options.insert("color-selected" , "#FF0000");
-//	 options.insert("color-active" , "#FF0000");
-//	 options.insert("color-selected-off" , "#FF0000");
-
-	options.insert("color","red");
-	options.insert("color-disabled","red");
-	options.insert("color-active","red");
-	options.insert("color-off",QApplication::palette().color(QPalette::Normal, QPalette::Text));
-	options.insert("color-active-off",QApplication::palette().color(QPalette::Normal, QPalette::Text));
-
- 
-//	 options.insert("color-disabled" , QApplication::palette().color(QPalette::Normal, QPalette::Text));
 	
 	ui->btn_Alphabetical->setIcon(awesome->icon(fa::fa_solid, fa::fa_arrow_down_a_z ));
    ui->btn_Filter->setIcon(awesome->icon(fa::fa_solid, fa::fa_filter));
@@ -102,7 +87,6 @@ MainWindow::MainWindow(QWidget *parent) :
    ui->archiveButton->setIcon(awesome->icon(fa::fa_solid, fa::fa_right_from_bracket));
    ui->refreshButton->setIcon(awesome->icon(fa::fa_solid, fa::fa_arrows_rotate ));
    ui->addButton->setIcon(awesome->icon(fa::fa_solid, fa::fa_plus ));
-   ui->context_lock->setIcon(awesome->icon(fa::fa_solid, fa::fa_lock, options));
    ui->pb_closeVersionBar->setIcon(awesome->icon(fa::fa_solid, fa::fa_xmark));
 	ui->deleteAction->setIcon(awesome->icon(fa::fa_solid, fa::fa_trash));
 	ui->editAction->setIcon(awesome->icon(fa::fa_solid, fa::fa_pencil));
@@ -117,7 +101,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->actionPrint->setShortcuts(QKeySequence::Print);
 	ui->copyAction->setShortcuts(QKeySequence::Copy);
 	
- 
+	connect(ui->context_lock,&QAbstractButton::toggled,this, &MainWindow::handle_contextlock_change);
 
     // Set up shortcuts . Mac translates the Ctrl -> Cmd
     // http://doc.qt.io/qt-5/qshortcut.html
@@ -215,6 +199,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	note_set->reLoad();	
 	
 	ui->context_lock->setChecked(settings.value(SETTINGS_CONTEXT_LOCK,DEFAULT_CONTEXT_LOCK).toBool());
+	this->handle_contextlock_change();
 	ui->sortAzAction->setChecked(settings.value(SETTINGS_SORT_AZ,DEFAULT_SORT_AZ).toBool());
 	ui->sortDateAction->setChecked(settings.value(SETTINGS_SORT_IDATE,DEFAULT_SORT_IDATE).toBool());
 	
@@ -889,3 +874,10 @@ void MainWindow::handleNoteUpdate(QString txt)
 */{
 	ui->noteView->setPlainText(txt);
 }
+
+void MainWindow::handle_contextlock_change()
+/*
+*/{
+	if (ui->context_lock->isChecked()) ui->context_lock->setIcon(awesome->icon(fa::fa_solid, fa::fa_lock));
+	else ui->context_lock->setIcon(awesome->icon(fa::fa_solid, fa::fa_unlock));
+ }
