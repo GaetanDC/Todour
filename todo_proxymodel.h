@@ -3,6 +3,7 @@
 
 #include <QSortFilterProxyModel>
 #include <QString>
+#include <QCollator>
 #include "def.h"
 #include "taskset.h"
 
@@ -31,7 +32,8 @@ enum iTaskFilterMode{ //ShowAll, Hide date th, Hide Context th, enhanced pm, due
 	HideUndue=0x4,
 	HideInactive=0x8,
 	TodaysView=0x10,
-	EnhancedPM=0x20,
+	DefaultView=0x20,
+	EnhancedPM=0x40,
 	ShowAll=0x80
 	};
 Q_DECLARE_FLAGS(TodourFilterMode, iTaskFilterMode)
@@ -46,14 +48,18 @@ Q_DECLARE_FLAGS(TodourFilterMode, iTaskFilterMode)
 		
 	inline TodourFilterMode getFilterMode() const{return actual_filter;};
 	void setFilterMode(TodourFilterMode mode);
-	void addFilterMode(TodourFilterMode mode);
 	
 	inline QStringList getContexts()const {return contexts;};
 	void setContexts(QStringList newc);	
 		
 	void updateFilterText(QString filter);
-  	
+  
+ // virtual void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
+ // void invalidate();
+  
   private:
+	QCollator m_collator;// improve QString compare speed
+	
   	QRegularExpression filterText;
   	TodourSortMode actual_sort;
   	TodourFilterMode actual_filter;
@@ -61,8 +67,9 @@ Q_DECLARE_FLAGS(TodourFilterMode, iTaskFilterMode)
   	QStringList contexts;
   	
   	bool filterTextHasProject;
-  	QDateTime dueWarningDate;
-  	signals:
+  	qlonglong dueWarningDate; //Date
+  	qlonglong now; //Date
+  signals:
 };
 
 	Q_DECLARE_OPERATORS_FOR_FLAGS(todoProxyModel::TodourSortMode)

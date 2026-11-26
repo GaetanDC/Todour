@@ -130,16 +130,16 @@ QVariant TodoTableModel::data(const QModelIndex &index, int role) const
 	}
 
 	if(role == Qt::UserRole+1)  //UserRole+1 returns inputdate
-			return QVariant(tasklist->at(index.row())->getInputDate());
+			return QVariant(tasklist->at(index.row())->getInputDate().toSecsSinceEpoch());
 
 	if(role == Qt::UserRole+2)  //UserRole+2 returns active state (bool)
 			return tasklist->at(index.row())->isActive();
 
 	if(role == Qt::UserRole+3)  //UserRole+3 returns thresholddate
-			return QVariant(tasklist->at(index.row())->getThresholdDate());
+			return QVariant(tasklist->at(index.row())->getThresholdDate().toSecsSinceEpoch());
 
 	if(role == Qt::UserRole+4)  //UserRole+4 returns duedate
-			return QVariant(tasklist->at(index.row())->getDueDate());
+			return QVariant(tasklist->at(index.row())->getDueDate().toSecsSinceEpoch());
 
 	if(role == Qt::UserRole+5)  //UserRole+5 returns thresholdContexts
 			return QVariant(tasklist->at(index.row())->getThresholdContexts());
@@ -163,13 +163,17 @@ bool TodoTableModel::setData(const QModelIndex & index, const QVariant & value, 
 /* 
 */{
    if(index.column()==0 && role == Qt::CheckStateRole)
-  	 		this->safeComplete(index,value.toBool());  
+  	 		this->safeComplete(index,(value.toBool() ? tri_state::setTrue : tri_state::setFalse));  
    else{ if(index.column()==1 && role == Qt::EditRole)
 			{this->safeEdit(index,value.toString());}
    	else return false;
    	}
 
-	tasklist->recalculate();
+//qDebug()<<"TodoTableModel::setData index="<<index<<endline;
+//qDebug()<<"    task="<<tasklist->at(index.row())->getDisplayText() <<endline;
+
+
+//	tasklist->recalculate();
    return true;
 }
 
@@ -184,11 +188,18 @@ void TodoTableModel::dataChanged(QModelIndex index)
 ////%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //Safe commands generate the action through the _undo stack
 
-void TodoTableModel::safeComplete(const QModelIndex & index, bool state)
+void TodoTableModel::safeComplete(const QModelIndex & index, tri_state act)
 /* Safely complete the tasks at position, creating an undo command
 */{
-	undoS->push(new CompleteCommand(tasklist, tasklist->at(index.row()), state));
+	bool val=false;
+	switch (act) {
+		case tri_state::toggle : val= !tasklist->at(index.row())->isComplete(); break;
+		case tri_state::setTrue : val= true; break;
+		case tri_state::setFalse : val = false; break;
+	}
+	undoS->push(new CompleteCommand(tasklist, tasklist->at(index.row()), val));
 	emit QAbstractItemModel::dataChanged(index.siblingAtColumn(0),index.siblingAtColumn(1));
+
 	}
 	
 void TodoTableModel::safeEdit(const QModelIndex & index, QString _raw)
@@ -241,13 +252,6 @@ void TodoTableModel::safePriority(const QModelIndex & index, QChar prio)
 /* Safely change priority of a task, creating an undo command
 */{ 
 	undoS->push(new PriorityCommand(tasklist,tasklist->at(index.row()), prio));
-	emit QAbstractItemModel::dataChanged(index.siblingAtColumn(0),index.siblingAtColumn(1));
-	}
-	
-void TodoTableModel::safeToggleComplete(const QModelIndex & index)
-/* Safely toggle the complete state
-*/{
-	undoS->push(new CompleteCommand(tasklist, tasklist->at(index.row()), !tasklist->at(index.row())->isComplete()));
 	emit QAbstractItemModel::dataChanged(index.siblingAtColumn(0),index.siblingAtColumn(1));
 	}
 	

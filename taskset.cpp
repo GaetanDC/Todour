@@ -112,6 +112,7 @@ void taskset::recalculate()
 /* Data of display has been modified, refresh the internal data:
 - through all tasks, 
 */{
+//	qDebug()<<"taskset::recalculate"<<endline;
 	QSettings settings;
 	contexts.clear();
 	full_contexts.clear();

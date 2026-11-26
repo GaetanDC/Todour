@@ -71,23 +71,17 @@ private slots:
 	 void dataInModelChanged(QModelIndex,QModelIndex);
     
    void on_actionEdit();
-   void on_actionComplete();
+   void on_actionComplete(bool force);
    void on_actionDelete();
    void on_actionPostpone();
    void on_actionDuplicate();
-   void on_actionPriority(QChar p);
-	
-   inline void on_actionPriorityA(){on_actionPriority('A');}
-   inline void on_actionPriorityB(){on_actionPriority('B');}
-   inline void on_actionPriorityC(){on_actionPriority('C');}
-   inline void on_actionPriorityD(){on_actionPriority('D');}
+   void on_actionPriority(QChar p);   
   
    void updateFilter(bool force=false);
    void updateFilterText(QString);
    void updateSort();
    
-   void on_actionCopy();
-   void on_actionSpace();
+   void on_actionCopy();;
    void on_actionUndo();
    void on_actionRedo();
     

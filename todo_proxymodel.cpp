@@ -17,13 +17,25 @@ todoProxyModel::todoProxyModel(QObject *parent)
    filterTextHasProject = false;
    this->setFilterRegularExpression(filterText);
    setDynamicSortFilter(false);
-}
+   
+   this->m_collator = *new QCollator();
+ }
 
 todoProxyModel::~todoProxyModel()
 	/*
 */{}
 
+/*void todoProxyModel::sort(int column, Qt::SortOrder order)
+{
+	qDebug()<<"todoProxyModel calls sort"<<endline;
+	QSortFilterProxyModel::sort(column, order);
+}*/
 
+/*void todoProxyModel::invalidate()
+{
+	qDebug()<<"todoProxyModel calls invalidate"<<endline;
+	QSortFilterProxyModel::invalidate();
+}*/
 
  bool todoProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 /* This is where we select the ordering. if left<right => return TRUE, otherwise return FALSE
@@ -36,20 +48,22 @@ Qt::UserRole+7 = completed
 Qt::UserRole+2 = active
 */{
 //	qDebug()<<"todoProxyModel::lessThan"<<endline;
+
 	 	if (actual_sort.testFlag(todoProxyModel::inactive_last)){
-	 		if (sourceModel()->data(left,Qt::UserRole+2).toBool() ^ (sourceModel()->data(right,Qt::UserRole+2).toBool()))
-					return (sourceModel()->data(left,Qt::UserRole+2).toBool()); // sort inactive last
-			
-			if (sourceModel()->data(left,Qt::UserRole+7).toBool() ^ (sourceModel()->data(right,Qt::UserRole+7).toBool()))
-					return (sourceModel()->data(right,Qt::UserRole+7).toBool()); // sort done last		
+			bool leftV=left.data(Qt::UserRole+2).toBool();
+	 		if ( leftV ^ (right.data(Qt::UserRole+2).toBool()))
+					return leftV; // sort inactive last
+			leftV=right.data(Qt::UserRole+7).toBool();
+			if (left.data(Qt::UserRole+7).toBool() ^ leftV)
+					return leftV; // sort done last		
 			}
 
 		if (actual_sort.testFlag(todoProxyModel::sort_az))
-					return QString::localeAwareCompare(sourceModel()->data(left,Qt::DisplayRole).toString(), sourceModel()->data(right,Qt::DisplayRole).toString())<0;   	
+					return m_collator.compare(left.data(Qt::DisplayRole).toString(), right.data(Qt::DisplayRole).toString())<0;   	
 		
 		if (actual_sort.testFlag(todoProxyModel::sort_idate))
-		    	return sourceModel()->data(left,Qt::UserRole+1).toDateTime() > sourceModel()->data(right,Qt::UserRole+1).toDateTime();
-
+//		    	return sourceModel()->data(left,Qt::UserRole+1).toDateTime() > sourceModel()->data(right,Qt::UserRole+1).toDateTime();
+		    	return left.data(Qt::UserRole+1).toLongLong() > right.data(Qt::UserRole+1).toLongLong();
 	
 	qDebug()<<" todoProxyModel::sort - erreur sorting"<<endline;       
 	return QSortFilterProxyModel::lessThan(left,right);
@@ -65,62 +79,57 @@ We filter based on
 - the "treat due as threshold" ?
 - the "today's view". We should be getting a score from (??) 
 */{
+
 	QModelIndex source_index = sourceModel()->index(sourceRow, 1, sourceParent);
-	QDateTime t_dueDate = sourceModel()->data(source_index,Qt::UserRole+4).toDateTime();
 
-// if ShowAll, rely on text.
-	if (actual_filter.testFlag(todoProxyModel::ShowAll))
-			return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
+// if Hide_inactive...
+	if (actual_filter.testFlag(todoProxyModel::HideInactive) || actual_filter.testFlag(todoProxyModel::TodaysView)){
+		if (!source_index.data(Qt::UserRole+2).toBool())   // isActive()
+			return false;
+		}
 
-// hide inactive if not ShowInactive
-	if (actual_filter.testFlag(todoProxyModel::HideInactive) ||actual_filter.testFlag(todoProxyModel::TodaysView))
-			if (!sourceModel()->data(source_index,Qt::UserRole+2).toBool())// isActive()
-					if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
-
-			// Threshold date.
-	if ((actual_filter.testFlag(todoProxyModel::HideThresholdDate) ||actual_filter.testFlag(todoProxyModel::TodaysView)) && 
-			sourceModel()->data(source_index,Qt::UserRole+3).toDateTime().isValid() &&
-			sourceModel()->data(source_index,Qt::UserRole+3).toDateTime()>QDateTime::currentDateTime())
-					if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
-			// Due as Threshold
-	if (actual_filter.testFlag(todoProxyModel::HideUndue) && 
-			t_dueDate.isValid() &&
-			t_dueDate > dueWarningDate)
-					if (!(t_dueDate.isValid() && t_dueDate < dueWarningDate))	return false;
-
+	if (actual_filter.testFlag(todoProxyModel::TodaysView)){ // hide inactive, threshold, D-priority, context-threshold, complete
+		if (source_index.data(Qt::UserRole+7) == Qt::Checked) return false; // no Checked task
+		if (source_index.data(Qt::UserRole+6).toChar()>'C')	return false; // Priority must be low
+	}
 
 // if ENHANCED_PM mode
 	if (actual_filter.testFlag(todoProxyModel::EnhancedPM)){
 	// 2.1 if a +project is selected, only show that one.
-		if (filterTextHasProject)//the filtertext contains a project (+...)
-				return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
-		else{ // else, hide all the +
-			if (t_dueDate.isValid() && t_dueDate < dueWarningDate)
-					return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
-			if (!actual_filter.testFlag(todoProxyModel::HideThresholdContext))
-					return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
-			if ( (! sourceModel()->data(source_index,Qt::UserRole+5).toStringList().empty())
-					|| (! sourceModel()->data(source_index,Qt::UserRole+8).toStringList().empty() ) )
+		if (!filterTextHasProject)//the filtertext doesn't contain a project (+...)
+			if ( (! source_index.data(Qt::UserRole+5).toStringList().empty())
+					|| (! source_index.data(Qt::UserRole+8).toStringList().empty() ) )
 							return false;					
 			}
-		}
-	else { // no enhancedPM, 
-		if (actual_filter.testFlag(todoProxyModel::HideThresholdContext)){
-//			qDebug()<<"filtering: reject context "<<contexts<<sourceModel()->data(source_index,Qt::UserRole+5).toStringList()<<endline;
-			for (QString i:contexts){
-				if (sourceModel()->data(source_index,Qt::UserRole+5).toStringList().contains(i)  //UserRole+5=threshold_context.
-//						|| sourceModel()->data(source_index,Qt::UserRole+8).toStringList().contains(i)
-						)
-							return false;
-				}
-			}				
-		}
-	if (actual_filter.testFlag(todoProxyModel::TodaysView)){ // hide inactive, threshold, D-priority, context-threshold, complete
-		if (sourceModel()->data(source_index,Qt::UserRole+7) == Qt::Checked) return false; // no Checked task
-		if (sourceModel()->data(source_index,Qt::UserRole+6).toChar()>'C')	return false; // Priority must be low
-	}
 
-	
+		
+qlonglong t_Date ;
+// if Hide_th date
+	if (!actual_filter.testFlag(todoProxyModel::ShowAll) && (actual_filter.testFlag(todoProxyModel::HideThresholdDate) || actual_filter.testFlag(todoProxyModel::TodaysView))){
+		t_Date = source_index.data(Qt::UserRole+3).toLongLong();
+		if( t_Date !=0 )
+				return !(t_Date > this->now);
+		}
+
+// if Hide undue
+	if (!actual_filter.testFlag(todoProxyModel::ShowAll) && (actual_filter.testFlag(todoProxyModel::HideUndue) || actual_filter.testFlag(todoProxyModel::TodaysView))){
+		t_Date = source_index.data(Qt::UserRole+4).toLongLong();
+		if( t_Date !=0 )
+				return !(t_Date < dueWarningDate);
+		}
+
+// if Hide th_context
+	if (!actual_filter.testFlag(todoProxyModel::ShowAll) && ((actual_filter.testFlag(todoProxyModel::HideThresholdContext) && actual_filter.testFlag(todoProxyModel::DefaultView) )|| actual_filter.testFlag(todoProxyModel::TodaysView))){
+		QStringList task_contexts = source_index.data(Qt::UserRole+5).toStringList();
+		for (const QString &i:contexts){
+			if (task_contexts.contains(i)  //UserRole+5=threshold_context.
+//					|| sourceModel()->data(source_index,Qt::UserRole+8).toStringList().contains(i)
+					)
+					return false;
+			}
+		}
+
+
 	return QSortFilterProxyModel::filterAcceptsRow(sourceRow,sourceParent);
 
 }
@@ -136,6 +145,7 @@ void todoProxyModel::refresh()
 void todoProxyModel::setSortMode(TodourSortMode mode)
 /* 
 */{
+	if (mode == actual_sort) return;
 	actual_sort = mode;
 	refresh();
 
@@ -146,23 +156,16 @@ void todoProxyModel::setFilterMode(TodourFilterMode mode)
 */{
 
 //	qDebug()<<"setFilterMode: new filter="<<mode<<endline;
-
+	if (mode == actual_filter) return;
 	actual_filter=mode;
 
 	QSettings settings;	
 	beginFilterChange();
-	dueWarningDate=QDateTime::currentDateTime().addDays(settings.value(SETTINGS_DUE_WARNING,DEFAULT_DUE_WARNING).toInt());
+	this->dueWarningDate=QDateTime::currentDateTime().addDays(settings.value(SETTINGS_DUE_WARNING,DEFAULT_DUE_WARNING).toInt()).toSecsSinceEpoch();
+	this->now = QDateTime::currentDateTime().toSecsSinceEpoch();
    endFilterChange(QSortFilterProxyModel::Direction::Rows);
 	refresh();
 }
-
-void todoProxyModel::addFilterMode(TodourFilterMode mode)
-/*TODO: this needs some check for incompatible modes, if any.
-*/{
-	actual_filter |= mode;
-	refresh();
-}
-
 
 void todoProxyModel::setContexts(QStringList newc)
 /*

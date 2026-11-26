@@ -133,15 +133,19 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(switchshortcut,SIGNAL(activated()),this, SLOT(toggleFocus()));
 
 	connect(ui->editAction, SIGNAL(triggered()), this, SLOT(on_actionEdit()));
-	connect(ui->completeAction, SIGNAL(triggered()), this, SLOT(on_actionComplete()));   
+//	connect(ui->completeAction, SIGNAL(triggered()), this, SLOT(on_actionComplete()));   
+	connect(ui->completeAction, &QAction::triggered, this, [this]{on_actionComplete(true);});   
+	
 	connect(ui->duplicateAction, SIGNAL(triggered()), this, SLOT(on_actionDuplicate()));
 	connect(ui->deleteAction, SIGNAL(triggered()), this, SLOT(on_actionDelete()));
 	connect(ui->postponeAction, SIGNAL(triggered()), this, SLOT(on_actionPostpone()));
 	connect(ui->dueTodayAction, SIGNAL(triggered()), this, SLOT(on_dueTodayAction_triggered()));		
-	connect(ui->ApriorAction,SIGNAL(triggered()),this,SLOT(on_actionPriorityA()));
-	connect(ui->BpriorAction,SIGNAL(triggered()),this,SLOT(on_actionPriorityB()));
-	connect(ui->CpriorAction,SIGNAL(triggered()),this,SLOT(on_actionPriorityC()));
-	connect(ui->DpriorAction,SIGNAL(triggered()),this,SLOT(on_actionPriorityD()));
+
+	connect(ui->ApriorAction, &QAction::triggered,this, [this]{on_actionPriority('A');});
+	connect(ui->BpriorAction, &QAction::triggered,this, [this]{on_actionPriority('B');});
+	connect(ui->CpriorAction, &QAction::triggered,this, [this]{on_actionPriority('C');});
+	connect(ui->DpriorAction, &QAction::triggered,this, [this]{on_actionPriority('D');});
+
    connect(ui->copyAction,SIGNAL(triggered()),this,SLOT(on_actionCopy()));
 	task_set = new taskset(this);
 	_undoStack = new QUndoStack(this);
@@ -161,38 +165,34 @@ MainWindow::MainWindow(QWidget *parent) :
   	ui->redoAction->setShortcuts(QKeySequence::Redo);
 	connect(_undoStack, SIGNAL(canRedoChanged(bool)), ui->redoAction, SLOT(setEnabled(bool)));
 	connect(ui->redoAction, SIGNAL(triggered()), this, SLOT(on_actionRedo()));
-	    	
-   connect(ui->sortAzAction, SIGNAL(triggered()), this, SLOT(updateSort()));
-   connect(ui->sortDateAction, SIGNAL(triggered()), this, SLOT(updateSort()));
-   connect(ui->sortInactiveAction, SIGNAL(triggered()), this, SLOT(updateSort()));    	
-		
+
 	QActionGroup* sortActionGroup = new QActionGroup(ui->btn_Alphabetical);
-	ui->sortAzAction->setActionGroup(sortActionGroup);
-	ui->sortDateAction->setActionGroup(sortActionGroup);
-    	
-   connect(ui->defaultViewAction, SIGNAL(triggered()), this, SLOT(updateFilter()));    	
-   connect(ui->todaysViewAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
-   connect(ui->projectViewAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
-   connect(ui->showAllAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
-   connect(ui->respectThresholdDateAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
-	connect(ui->respectThresholdContextAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
-   connect(ui->thresholdDueAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
-   connect(ui->hideInactiveAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
-    	
-   viewActionGroup = new QActionGroup(ui->btn_Filter);
-	ui->defaultViewAction->setActionGroup(viewActionGroup);
-	ui->todaysViewAction->setActionGroup(viewActionGroup);
-	ui->projectViewAction->setActionGroup(viewActionGroup);
-	ui->showAllAction->setActionGroup(viewActionGroup);
+	 ui->sortAzAction->setActionGroup(sortActionGroup);
+	 ui->sortDateAction->setActionGroup(sortActionGroup);
+	    	
+	connect(ui->sortAzAction, SIGNAL(triggered()), this, SLOT(updateSort()));
+	connect(sortActionGroup, SIGNAL(triggered(QAction*)),this,SLOT(updateSort()));
+		
+	viewActionGroup = new QActionGroup(ui->btn_Filter);
+	 ui->defaultViewAction->setActionGroup(viewActionGroup);
+	 ui->todaysViewAction->setActionGroup(viewActionGroup);
+	 ui->projectViewAction->setActionGroup(viewActionGroup);
+	 ui->showAllAction->setActionGroup(viewActionGroup);
    
-   connect(ui->lineEditFilter, SIGNAL(currentTextChanged(QString)),this, SLOT(updateFilterText(QString)));
+	connect(ui->respectThresholdDateAction, SIGNAL(triggered()), this, SLOT(updateFilter()));    	
+	connect(ui->respectThresholdContextAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
+	connect(ui->thresholdDueAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
+	connect(ui->hideInactiveAction, SIGNAL(triggered()), this, SLOT(updateFilter()));
+	connect(viewActionGroup,SIGNAL(triggered(QAction*)),this,SLOT(updateFilter()));
+   
+	connect(ui->lineEditFilter, SIGNAL(currentTextChanged(QString)),this, SLOT(updateFilterText(QString)));
  	connect(ui->lineEditNew, SIGNAL(returnPressed()),this, SLOT(on_addButton_clicked()));
     	    	
-   ui->btn_Alphabetical->setMenu(ui->sortMenu);
-   ui->btn_Alphabetical->setPopupMode( QToolButton::InstantPopup);
-   ui->btn_Filter->setMenu(ui->filterMenu);
-   ui->btn_Filter->setPopupMode( QToolButton::InstantPopup);
-	
+	ui->btn_Alphabetical->setMenu(ui->sortMenu);
+	ui->btn_Alphabetical->setPopupMode( QToolButton::InstantPopup);
+	ui->btn_Filter->setMenu(ui->filterMenu);
+	ui->btn_Filter->setPopupMode( QToolButton::InstantPopup);
+
     // Version check
     Version = new todour_version();
     connect(Version,SIGNAL(NewVersion(QString)),this,SLOT(new_version(QString)));
@@ -208,7 +208,7 @@ MainWindow::MainWindow(QWidget *parent) :
    ui->tableView->setModel(proxyModel);
    ui->tableView->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
    ui->tableView->resizeColumnToContents(0); // Checkboxes kept small
-	connect(model,SIGNAL(dataChanged(QModelIndex, QModelIndex)),proxyModel,SLOT(invalidate()));
+//	connect(model,SIGNAL(dataChanged(QModelIndex, QModelIndex)),proxyModel,SLOT(invalidate()));
 	
 	note_set = new noteset(this);
 	connect(note_set,SIGNAL(updateText(QString)),this,SLOT(handleNoteUpdate(QString)));
@@ -243,7 +243,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	QShortcut* spaceDone = new QShortcut(ui->tableView);
 	spaceDone->setKey(Qt::Key_Space);
 	spaceDone->setContext(Qt::WidgetShortcut);
-	QObject::connect(spaceDone,SIGNAL(activated()),this,SLOT(on_actionSpace()));
+//	QObject::connect(spaceDone,SIGNAL(activated()),this,SLOT(on_actionSpace()));
+	connect(spaceDone, &QShortcut::activated, this, [this]{on_actionComplete(false);});
 
 	this->updateSettings();
 
@@ -274,13 +275,6 @@ It should be safe to run it at any time.
 //    f.setPointSize(settings.value(SETTINGS_FONT_SIZE,DEFAULT_FONT_SIZE).toInt());
 //    qApp->setFont(f);
    
-  	if ( settings.value(SETTINGS_ENHANCED_PM,DEFAULT_ENHANCED_PM).toBool()){
-		ui->projectViewAction->setVisible(true);
-		}
-	else{
-		ui->projectViewAction->setVisible(false);
-		}
-
 	QString savedFilter=settings.value(SETTINGS_LAST_FILTER, DEFAULT_LAST_FILTER).toString();
 	if (!savedFilter.isEmpty()){
 		for (QAction *a : viewActionGroup->actions()){
@@ -312,21 +306,21 @@ We need to update the title + recalculate the tasks active.
     Q_UNUSED(i1)
     
 	task_set->recalculate();
-	QString filter = ui->lineEditFilter->currentText();
-	ui->lineEditFilter->clear();
+//	QString filter = ui->lineEditFilter->currentText();
+//	ui->lineEditFilter->clear();
 //	for (int i=0;i<ui->lineEditFilter->count();i++) ui->lineEditFilter->removeItem(i);
-	ui->lineEditFilter->addItem("");
+//	ui->lineEditFilter->addItem("");
 
-	if ( settings.value(SETTINGS_ENHANCED_PM,DEFAULT_ENHANCED_PM).toBool()){
-		proxyModel->setContexts(task_set->getFullContexts());
-		ui->lineEditFilter->addItems(task_set->getFullContexts());
-		}
-	else{
-		proxyModel->setContexts(task_set->getContexts());
-		ui->lineEditFilter->addItems(task_set->getContexts());
-		}
+//	if ( ui->projectViewAction->isChecked()){
+//		proxyModel->setContexts(task_set->getFullContexts());
+//		ui->lineEditFilter->addItems(task_set->getFullContexts());
+//		}
+//	else{
+//		proxyModel->setContexts(task_set->getContexts());
+//		ui->lineEditFilter->addItems(task_set->getContexts());
+//		}
 	
-	ui->lineEditFilter->setCurrentText(filter);
+//	ui->lineEditFilter->setCurrentText(filter);
 	
 	//TODO: create a system to identify the change of context at lower level. Only update if changed.
 	proxyModel->refresh();
@@ -349,6 +343,8 @@ void MainWindow::toggleFocus()
 void MainWindow::updateTitle()
 /*
 */{
+	
+//	qDebug()<<"MainWindow::updateTitle start"<<endline;
     if(proxyModel != NULL){
         int visible = proxyModel->rowCount();
         int total = proxyModel->sourceModel()->rowCount();
@@ -357,6 +353,7 @@ void MainWindow::updateTitle()
 		else 
 				this->setWindowTitle(baseTitle+" * (" +QString::number(visible)+"/"+QString::number(total)+")");
 		}
+//	qDebug()<<"MainWindow::updateTitle end"<<endline;
 	}
 
 void MainWindow::on_tableView_customContextMenuRequested(const QPoint &pos)
@@ -386,54 +383,54 @@ void MainWindow::updateFilterText(QString arg1)
 void MainWindow::updateFilter(bool force)
 /* This function reads the filter submenu status + lineEditFilter text to give the right info to the proxy.
 */{
-	todoProxyModel::TodourFilterMode currentMode = proxyModel->getFilterMode();
-	todoProxyModel::TodourFilterMode newval=proxyModel->getFilterMode();
-	
-	if (ui->todaysViewAction->isChecked() || ui->showAllAction->isChecked()) {
-		ui->respectThresholdDateAction->setEnabled(false);
-		ui->respectThresholdContextAction->setEnabled(false);
-   	ui->thresholdDueAction->setEnabled(false);
-   	ui->hideInactiveAction->setEnabled(false);
-		}
-	else {
-		ui->respectThresholdDateAction->setEnabled(true);
-		ui->respectThresholdContextAction->setEnabled(true);
-   	ui->thresholdDueAction->setEnabled(true);
-   	ui->hideInactiveAction->setEnabled(true);
-		}
 
-	if (ui->todaysViewAction->isChecked())
-			newval |= todoProxyModel::TodaysView;
-	else
-			newval &=  ~todoProxyModel::TodaysView;
+	todoProxyModel::TodourFilterMode newval=todoProxyModel::NoFilter;
 
-	if (ui->projectViewAction->isChecked())
-			newval |= todoProxyModel::EnhancedPM;
-	else
-			newval &= ~todoProxyModel::EnhancedPM;	
+	if (ui->defaultViewAction->isChecked()){
+		ui->respectThresholdContextAction->setVisible(true);
+		ui->respectThresholdDateAction->setVisible(true);
+		ui->thresholdDueAction->setVisible(true);
+		ui->hideInactiveAction->setVisible(true);
+		newval |= todoProxyModel::DefaultView;
+	}
+
+	if (ui->projectViewAction->isChecked()){
+		ui->respectThresholdContextAction->setVisible(false);
+		ui->respectThresholdDateAction->setVisible(true);
+		ui->thresholdDueAction->setVisible(true);
+		ui->hideInactiveAction->setVisible(true);
+		newval |= todoProxyModel::EnhancedPM;
+	}
+
+	if (ui->todaysViewAction->isChecked()){
+		ui->respectThresholdContextAction->setVisible(false);
+		ui->respectThresholdDateAction->setVisible(false);
+		ui->thresholdDueAction->setVisible(false);
+		ui->hideInactiveAction->setVisible(false);
+		newval |= todoProxyModel::TodaysView;
+	}
+
+	if (ui->showAllAction->isChecked()){
+		ui->respectThresholdContextAction->setVisible(false);
+		ui->respectThresholdDateAction->setVisible(false);
+		ui->thresholdDueAction->setVisible(false);
+		ui->hideInactiveAction->setVisible(true);
+		newval |= todoProxyModel::ShowAll;
+	}
 
 	if (ui->respectThresholdDateAction->isChecked())
 			newval |= todoProxyModel::HideThresholdDate;
-	else
-			newval &= ~todoProxyModel::HideThresholdDate;
 
 	if (ui->respectThresholdContextAction->isChecked())
 			newval |= todoProxyModel::HideThresholdContext;
-	else
-			newval &= ~todoProxyModel::HideThresholdContext;
 		
 	if (ui->thresholdDueAction->isChecked())
 		newval |= todoProxyModel::HideUndue;
-	else
-		newval &= ~todoProxyModel::HideUndue;
 
 	if (ui->hideInactiveAction->isChecked())
 		newval |= todoProxyModel::HideInactive;
-	else
-		newval &= ~todoProxyModel::HideInactive;
 
-	if (force || newval != currentMode)
-			proxyModel->setFilterMode(newval);
+	proxyModel->setFilterMode(newval);
 	updateTitle();
 }
 
@@ -601,7 +598,7 @@ void MainWindow::on_addButton_clicked()
         QSettings settings;
         QChar not_char=QChar::Null;
         QString sett = settings.value(SETTINGS_SEARCH_NOT_CHAR,DEFAULT_SEARCH_NOT_CHAR).toString();
-        if (sett.size()>0) sett.at(0);
+        if (sett.size()>=0) not_char=sett.at(0);
         QStringList contexts = ui->lineEditFilter->currentText().split(QRegularExpression("\\s"));
         for(QString c:contexts){
          if(c.length()>0 && c.at(0)==not_char) continue; // ignore this one
@@ -719,35 +716,25 @@ void MainWindow::on_actionStay_On_Top_changed()
 
 void MainWindow::on_actionUndo()
 /* */{
-	if (_undoStack->undoText()=="deletion" || _undoStack->undoText()=="addition"){
+//	if (_undoStack->undoText()=="deletion" || _undoStack->undoText()=="addition"){
 	 	model->startModelChange();
 		_undoStack->undo();
 		model->endModelChange();
-		}
-	else _undoStack->undo();
-	updateTitle();
+//		}
+//	else _undoStack->undo();
+	
+	
 }
 
 void MainWindow::on_actionRedo()
 /* */{
-	if (_undoStack->redoText()=="deletion" || _undoStack->redoText()=="addition"){
+//	if (_undoStack->redoText()=="deletion" || _undoStack->redoText()=="addition"){
 	 	model->startModelChange();
 		_undoStack->redo();
 		model->endModelChange();
-		}
-	else _undoStack->redo();
-	updateTitle();
-}
-
-void MainWindow::on_actionSpace()
-/*  */{
-   QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
-	for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i){
-   	if(i->isValid())
-	   	model->safeToggleComplete(*i);
-
-	updateTitle();
-   }
+//		}
+//	else _undoStack->redo();
+//	updateTitle();
 }
 
 void MainWindow::on_actionEdit()
@@ -758,13 +745,14 @@ void MainWindow::on_actionEdit()
      	   ui->tableView->edit(index);
 }
 
-void MainWindow::on_actionComplete()
+void MainWindow::on_actionComplete(bool force)
 /* user clicked "Complete" on a set of tasks. 
 */{
+	tri_state val = (force? tri_state::setTrue: tri_state::toggle);
    QModelIndexList indexes = proxyModel->mapSelectionToSource(ui->tableView->selectionModel()->selection()).indexes();
 	_undoStack->beginMacro("Complete");
 	for (QList<QModelIndex>::iterator i=indexes.begin(); i!=indexes.end();++i)
-			model->safeComplete(*i,true);
+			if(i->isValid()) model->safeComplete(*i,val);
 	_undoStack->endMacro(); 
    updateTitle();
 }

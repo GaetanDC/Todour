@@ -1,6 +1,7 @@
 #ifndef TODOTABLEMODEL_H
 #define TODOTABLEMODEL_H
 
+#include "def.h"
 #include <QAbstractTableModel>
 #include <QMouseEvent>
 #include "task.h"
@@ -30,14 +31,13 @@ public:
 	QString toString();
 
 
-	 void safeComplete(const QModelIndex & index, bool state);
+	 void safeComplete(const QModelIndex & index, tri_state act);
 	 void safeEdit(const QModelIndex & index, QString _raw);
     void safeAdd(task* _t);
     void safeAdd(QString s, QString c="");
     void safeDelete(QModelIndexList indexes);
     void safePostpone(const QModelIndex & index, QString txt);
     void safePriority(const QModelIndex & index, QChar prio);
-	 void safeToggleComplete(const QModelIndex & index);
 	 void safeProgress(const QModelIndex & index);
 	void safeDueDate(const QModelIndex & index, QDateTime d);
 

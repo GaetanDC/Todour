@@ -259,14 +259,7 @@
          </property>
         </widget>
        </item>
-       <item>
-        <widget class="QCheckBox" name="cb_enhancedPM">
-         <property name="text">
-          <string>Enhanced Project Management (hide all +project)</string>
-         </property>
-        </widget>
-       </item>
-       <item>
+        <item>
         <widget class="QCheckBox" name="cb_tray_icon">
          <property name="text">
           <string>Enable tray</string>

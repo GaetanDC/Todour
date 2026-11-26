@@ -221,4 +221,7 @@
 
 enum prio_on_close {removeit=0,moveit,tagit};
 
+enum tri_state {setTrue,setFalse,toggle};
+
+
 #endif // DEF_H

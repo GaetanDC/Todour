@@ -50,6 +50,9 @@ int main(int argc, char *argv[])
     	exit(0);
     }
 
+//qSetMessagePattern("%{message}\n%{backtrace depth=10}");
+
+
     MainWindow w;
     appl.setWindowIcon(QIcon(":/icons/todour.png"));
     w.show();

@@ -48,6 +48,7 @@ private:
 	QStringList contexts;
 	QStringList thr_contexts;
 	int progress;
+	QString recurrence;
 	
 public:
 	task(QString s="", QString context="", bool loaded=false);

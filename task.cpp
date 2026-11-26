@@ -249,6 +249,13 @@ void task::parse(QString s,bool strict)
 	else
 		color=QColor::fromString("White");
 
+	recurrence = "";
+	matches = regex_rec.globalMatch(_raw);
+		if (matches.hasNext()){
+			this->recurrence = matches.next().captured(1);
+		}
+
+
 //	qDebug()<<"task::parse step 8"<<endline;
 
 	this->updateDisplayText();
@@ -262,6 +269,9 @@ void task::parse(QString s,bool strict)
 	
 	_ttag=QDateTime::currentDateTime();
 //	qDebug()<<"task::parse Task parsed: "<<this->toString()<<endline;
+
+
+
 }
 
 void task::updateDisplayText()
@@ -472,24 +482,22 @@ task* task::setComplete(bool c)
 	task *ret=nullptr;
 //	_raw.remove(regex_done);
 	if (c){
-		auto match = regex_rec.match(_raw);
-		if (match.hasMatch()){
-			QString tmp = match.captured(1);
+		if (! this->recurrence.isEmpty()){
 			ret = new task(this);
 			QDateTime new_date;
-			if (this->getThresholdDate().isValid()){ // t: is valid, and due is not
-				ret->setThresholdDate(task::getRelativeDate(tmp, getThresholdDate()));
+			if (thrD.isValid()){ // t: is valid, and due is not
+				ret->setThresholdDate(task::getRelativeDate(this->recurrence, thrD));
 				}
-			if (this->getDueDate().isValid()){ // due: is valid, and t: is not
-				ret->setDueDate(task::getRelativeDate(tmp, getDueDate()));
+			else if (dueD.isValid()){ // due: is valid, and t: is not
+				ret->setDueDate(task::getRelativeDate(this->recurrence, dueD));
 				}
-			if (!this->getThresholdDate().isValid() && !this->getDueDate().isValid()){			  // nor t: nor due: are valid
+			else if (!thrD.isValid() && !dueD.isValid()){			  // nor t: nor due: are valid
 				if (settings.value(SETTINGS_DEFAULT_THRESHOLD,DEFAULT_DEFAULT_THRESHOLD) == "t:"){
-					ret->setThresholdDate(task::getRelativeDate(tmp, QDateTime()));
+					ret->setThresholdDate(task::getRelativeDate(this->recurrence, QDateTime()));
 				}
-			else{
-				ret->setDueDate(task::getRelativeDate(tmp, QDateTime()));
-				}
+				else{
+					ret->setDueDate(task::getRelativeDate(this->recurrence, QDateTime()));
+					}
 					
 			}
 
@@ -512,7 +520,7 @@ task* task::setComplete(bool c)
 	return ret;
 }
 
-QString task::getURL() const
+QString task::getURL() const noexcept
 /* */
 { // NOT USED
     QRegularExpressionMatch m=regex_url.match(_raw);
@@ -526,7 +534,7 @@ QString task::getURL() const
 }
 
 
-QString task::toSaveString() const
+QString task::toSaveString() const noexcept
 /* returns the full QString for saving, including all hidden data.
 */{
 	QString ret=getEditText();
@@ -535,7 +543,7 @@ QString task::toSaveString() const
 	return ret;
 }
 
-QString task::toSaveString_pureTODO() const
+QString task::toSaveString_pureTODO() const noexcept
 /* returns the full QString for saving, including all hidden data.
 */{
 	return getEditText();
@@ -553,7 +561,7 @@ void task::recalculateTask(QStringList inactiveflags)
 		}
 	}
 
-QString task::toString() const
+QString task::toString() const noexcept
 /* returns the full QString for debugging, including all hidden data.
 */
 {
